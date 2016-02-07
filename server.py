@@ -5,47 +5,45 @@ import funcs
 from channels import channels
 from actions import actions
 
-clients = []
-
 def startup():
-    session = db.Session()
-
     # Load rooms
-    rooms = session.query(db.Room).all()
+    rooms = db.session.query(db.Room).all()
     for room in rooms:
         mud.rooms.append(room)
-    session.close()
 
     # Create a lobby if there are no rooms
     if len(mud.rooms) < 1:
         mud.create_lobby()
+
+    # populate cards if table is empty
+    if len(db.session.query(db.Card).all()) < 1:
+        funcs.update_cards()
+
 
 class Protocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.transport = transport
         self.addr = transport.get_extra_info('peername')
-        self.authd = False
-        self.session = db.Session()
         self.user = None
-        self.room = None
 
         print("Connected: {}".format(self.addr))
-        clients.append(self)
-        self.msg_self("\nWelcome to MtGMUD!!\n")
+        mud.clients.append(self)
+	#TODO: Add a welcome function
+        self.msg_self("\n########## Welcome to MtGMUD!! ##########\n\nLogin: <username> <password>\nRegister: register <username> <password> <password>")
+        self.get_prompt()
 
     def data_received(self, data):
-        #print("[DEBUG]{}: {}".format(self.addr, data.decode()))
         msg = data.decode().strip()
         args = msg.split()
 
-        if not self.authd:
+        if self.user is None:
             funcs.login(self, args)
             return
 
         if msg:
             if msg[0] in channels:
-                self.msg_channel(msg[0], msg[1:])
+                channels[msg[0]](self, msg[1:])
                 self.get_prompt()
                 return
 
@@ -54,6 +52,7 @@ class Protocol(asyncio.Protocol):
                 self.get_prompt()
                 return
 
+            self.msg_self("\nHuh?")
         self.get_prompt()
 
     def get_prompt(self):
@@ -62,17 +61,12 @@ class Protocol(asyncio.Protocol):
     def msg_self(self, msg):
         self.transport.write(msg.encode())
 
-    def msg_channel(self, channel, msg):
-        for client in clients:
-            if client is self:
-                client.transport.write("[{}] You: {}".format(channels[channel], msg).encode())
-            else:
-                client.transport.write("\n[{}] {}: {}".format(channels[channel], self.addr, msg).encode())
+    def msg_client(self, client, msg):
+        client.transport.write(msg.encode())
 
     def connection_lost(self, ex):
         print("Disconnected: {}".format(self.addr))
-        mud.users.remove(self)
-        clients.remove(self)
+        mud.clients.remove(self)
 
 
 if __name__ == '__main__':
@@ -86,6 +80,7 @@ if __name__ == '__main__':
 
     print("Running start-up tasks...")
     startup()
+    print("Completed start-up.")
 
     try:
         loop.run_forever()
