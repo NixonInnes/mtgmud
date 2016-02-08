@@ -6,7 +6,8 @@ from actions import actions
 
 def login(client, args):
     if len(args) == 0:
-        client.msg_self("Login error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>\n")
+        client.msg_self("Login error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>")
+        client.get_prompt()
         return
 
     if args[0] == 'register':
@@ -20,6 +21,7 @@ def login(client, args):
                 return
             else:
                 client.msg_self("Username \"{}\" is already taken, sorry.\n".format(args[1]))
+                client.get_prompt()
 
     if len(args) == 2:
         dbuser = db.session.query(db.User).filter_by(name=args[0]).first()
@@ -30,7 +32,8 @@ def login(client, args):
                 client.get_prompt()
                 return
 
-    client.msg_self("Login error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>\n")
+    client.msg_self("Login error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>")
+    client.get_prompt()
 
 
 def get_room(room_name):
@@ -48,7 +51,6 @@ def get_client(user_name):
 def update_cards():
     cards = requests.get('http://mtgjson.com/json/AllCards.json').json()
     for c in cards:
-        #try:
         card = db.Card(
             name = cards[c]['name'],
             names = cards[c]['names'] if 'names' in cards[c] else None,
@@ -66,7 +68,5 @@ def update_cards():
             loyalty = cards[c]['loyalty'] if 'loyalty' in cards[c] else None
         )
         db.session.add(card)
-        #except:
-        #    print("Card: {} failed to be saved.".format(cards[c]['name']))
     db.session.commit()
 

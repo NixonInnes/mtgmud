@@ -102,17 +102,59 @@ def do_room(client, args):
 def do_goto(client, args):
     if args is None:
         client.msg_self("\nGoto where?!")
-        return
-    room_name = ' '.join(args)
-    room = funcs.get_room(room_name)
-    if room is not None:
-        if client.user.room is not None:
-            client.user.room.occupants.remove(client)
-        client.user.room = room
-        client.user.room.occupants.append(client)
-        do_look(client, None)
-        return
-    client.msg_self("\nGoto where?!")
+    else:
+        room_name = ' '.join(args)
+        room = funcs.get_room(room_name)
+        if room is not None:
+            if client.user.room is not None:
+                client.user.room.occupants.remove(client)
+            client.user.room = room
+            client.user.room.occupants.append(client)
+            do_look(client, None)
+            return
+        client.msg_self("\nGoto where?!")
+
+
+def do_deck(client, args):
+    if args is None:
+        if client.user.deck is not None:
+            client.msg_self(client.user.deck.show())
+            return
+
+    def new(args):
+        if args is None:
+            client.msg_self("\nPlease specify a deck name.\nUsage: deck new <deck_name>")
+        else:
+            new_deck = db.Deck(
+                name = ' '.join(args),
+                owner_id = client.user.id,
+                cards = {}
+            )
+            db.session.add(new_deck)
+            client.user.decks.append(new_deck)
+            db.session.commit()
+            client.user.deck = new_deck
+            client.msg_self("Created new deck '{}".format(new_deck.name))
+
+    table = {
+        'new': new
+    }
+
+    if args is None:
+        if client.user.deck is None:
+            client.msg_self("\nYou do not have an active deck. Use 'deck set <deck_name>' to set an active deck.")
+        else:
+            client.msg_self(client.user.deck.show())
+    else:
+        if args[0] in table:
+            table[args[0]](args[1:] if len(args) > 1 else None)
+
+
+def do_decks(client, args):
+    buff = "\n##### Decks #####"
+    for deck in client.user.decks:
+        buff += "\n{}[{}] {}".format('*' if deck == client.user.deck else '', deck.no_cards, deck.name)
+    client.msg_self(buff)
 
 
 actions = {
@@ -122,6 +164,8 @@ actions = {
     'rooms': do_rooms,
     'room':  do_room,
     'goto':  do_goto,
-    'card':  do_card
+    'card':  do_card,
+    'deck':  do_deck,
+    'decks': do_decks
 }
 

@@ -17,14 +17,12 @@ PORT = os.environ.get('PORT') or 4000
 
 
 def create_lobby():
-    session = db.Session()
     lobby = db.Room(
         name="Lobby",
         description="This is the MtGMUD Lobby."
     )
-    session.add(lobby)
-    session.commit()
-    session.close()
+    db.session.add(lobby)
+    db.session.commit()
     rooms.append(lobby)
 
 
