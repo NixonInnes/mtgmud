@@ -30,8 +30,9 @@ class User(Base):
     name = Column(String)
     admin = Column(String, default=False)
     room = None
+    table = None
     decks = relationship('Deck')
-    deck = None
+    deck = Column(PickleType)
     _password = Column(String)
 
     @property
@@ -103,7 +104,7 @@ class Deck(Base):
     def no_cards(self):
         num = 0
         for card in self.cards:
-            num += card
+            num += self.cards[card]
         return num
 
     def get(self):

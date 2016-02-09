@@ -2,6 +2,7 @@ import mud
 import db
 import funcs
 
+#TODO: Tidy up the logic of these functions to be more consistent
 
 def do_quit(client, args):
     client.msg_self("\nYou are wracked with uncontrollable pain as you are extracted from the Matrix.\n")
@@ -125,8 +126,13 @@ def do_deck(client, args):
         if args is None:
             client.msg_self("\nPlease specify a deck name.\nUsage: deck new <deck_name>")
         else:
+            deck_name = ' '.join(args)
+            for d in client.user.decks:
+                if d.name == deck_name:
+                    client.msg_self("You already have a deck named '{}'.".format(deck_name))
+                    return
             new_deck = db.Deck(
-                name = ' '.join(args),
+                name = deck_name,
                 owner_id = client.user.id,
                 cards = {}
             )
@@ -134,10 +140,52 @@ def do_deck(client, args):
             client.user.decks.append(new_deck)
             db.session.commit()
             client.user.deck = new_deck
-            client.msg_self("Created new deck '{}".format(new_deck.name))
+            client.msg_self("Created new deck '{}'.".format(new_deck.name))
+
+    def set(args):
+        if args is None:
+            client.msg_self("\nSet what?!\nUsage: deck set <deck_name>")
+        else:
+            deck_name = ' '.join(args)
+            for d in client.user.decks:
+                if d.name == deck_name:
+                    client.user.deck = d
+                    client.msg_self("{} is now your active deck.".format(d.name))
+                    return
+            client.msg_self("Deck '{}' not found.".format(deck_name))
+
+
+    def add(args):
+        if args is None:
+            client.msg_client("\nAdd what?!\nUsage: deck add <card_name>")
+            return
+
+        if client.user.deck is None:
+            client.msg_self("\nYou do not have an active deck. Use 'deck set <deck_name>' to set an active deck.")
+            return
+
+        card_name = ' '.join(args)
+        s_card = db.session.query(db.Card).filter_by(name=card_name).first()
+
+        if s_card is None:
+            client.msg_self("\nCard '{}' not found.".format(card_name))
+            return
+
+        if s_card.id in client.user.deck.cards:
+            client.user.deck.cards[s_card.id] += 1
+        else:
+            client.user.deck.cards[s_card.id] = 1
+
+        db.session.add(client.user.deck)
+        db.session.commit()
+        client.msg_self("\nAdded '{}' to {}.".format(card_name, client.user.deck.name))
+
+
 
     table = {
-        'new': new
+        'new': new,
+        'add': add,
+        'set': set
     }
 
     if args is None:
@@ -148,6 +196,8 @@ def do_deck(client, args):
     else:
         if args[0] in table:
             table[args[0]](args[1:] if len(args) > 1 else None)
+        else:
+            client.msg_self("\nDeck what?!")
 
 
 def do_decks(client, args):
