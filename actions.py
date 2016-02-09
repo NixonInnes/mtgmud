@@ -1,3 +1,5 @@
+import os
+
 import mud
 import db
 import funcs
@@ -21,6 +23,20 @@ def do_who(client, args):
         buff += "\n\t{}\t{}".format(c.user.name, c.user.room.name)
     buff += "\n\nOnline: {}".format(len(mud.clients))
     client.msg_self(buff)
+
+
+def do_help(client, args):
+    if args is None:
+        file = open('help/help', 'r')
+    else:
+        filename = os.path.join('help/',' '.join(args))
+        if os.path.isfile(filename):
+            file = open(filename, 'r')
+        else:
+            file = open('help/help', 'r')
+    help_ = file.read()
+    file.close()
+    client.msg_self(help_)
 
 
 def do_card(client, args):
@@ -211,6 +227,7 @@ actions = {
     'quit':  do_quit,
     'look':  do_look,
     'who':   do_who,
+    'help': do_help,
     'rooms': do_rooms,
     'room':  do_room,
     'goto':  do_goto,
