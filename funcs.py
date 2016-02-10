@@ -1,38 +1,59 @@
 import requests
 import mud
 import db
-from actions import actions
+import actions
 
 
 def login(client, args):
     if len(args) == 0:
-        client.msg_self("Login error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>")
+        client.msg_self("\nLogin error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>")
         client.get_prompt()
         return
 
     if args[0] == 'register':
         if len(args) == 4 and args[2] == args[3]:
-            if db.session.query(db.User).filter_by(name=args[1]).first() is None:
-                client.user = db.User(name=args[1], password=args[2])
-                db.session.add(client.user)
-                db.session.commit()
-                actions['goto'](client, ['Lobby'])
+            if len(args[1]) > 20:
+                client.msg_self("\nUsername is too long (max. 20).")
                 client.get_prompt()
                 return
-            else:
-                client.msg_self("Username \"{}\" is already taken, sorry.\n".format(args[1]))
+
+            if db.session.query(db.User).filter_by(name=args[1]).first() is not None:
+                client.msg_self("\nUsername \"{}\" is already taken, sorry.\n".format(args[1]))
                 client.get_prompt()
+                return
+
+            new_user = db.User(name=args[1], password=args[2])
+            db.session.add(new_user)
+            db.session.commit()
+            load_user(client, new_user)
+            return
 
     if len(args) == 2:
         dbuser = db.session.query(db.User).filter_by(name=args[0]).first()
         if dbuser is not None:
             if dbuser.verify_password(args[1]):
-                client.user = dbuser
-                actions['goto'](client, ['Lobby'])
-                client.get_prompt()
+                load_user(client, dbuser)
                 return
 
-    client.msg_self("Login error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>")
+    client.msg_self("\nLogin error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>")
+    client.get_prompt()
+
+
+def load_user(client, user):
+    for c in mud.clients:
+        if c.user == user:
+            client.msg_client(c, "\nYou have signed in from another location!")
+            actions.do_quit(c, None)
+
+    client.user = user
+
+    client.room = mud.rooms[0]
+    mud.rooms[0].occupants.append(client)
+    actions.do_look(client, None)
+
+    if client.user.deck_id is not None:
+        client.user.deck = db.session.query(db.Deck).get(client.user.deck_id)
+
     client.get_prompt()
 
 

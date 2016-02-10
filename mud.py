@@ -11,18 +11,9 @@ if os.path.exists('.env'):
 
 clients = []
 rooms = []
+tables = []
 
 HOST = os.environ.get('HOST') or ''
 PORT = os.environ.get('PORT') or 4000
-
-
-def create_lobby():
-    lobby = db.Room(
-        name="Lobby",
-        description="This is the MtGMUD Lobby."
-    )
-    db.session.add(lobby)
-    db.session.commit()
-    rooms.append(lobby)
 
 

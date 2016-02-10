@@ -1,8 +1,9 @@
-from random import shuffle
+from itertools import zip_longest
 
 class Table(object):
-    def __init__(self, client):
+    def __init__(self, client, name):
         self.owner = client
+        self.name = name
         self.battlefields = {}
         self.graveyards = {}
         self.exiles = {}
@@ -22,20 +23,15 @@ class Table(object):
         self.hands[client.user] = Pile()
 
 
-class Pile(list):
-    def __init__(self):
-        super().__init__(self)
-
-    def add(self, card, num=1):
-        while num > 0:
-            self.append(card)
-            num -= 1
-
-    def rem(self, card_name, num=1):
-        while num > 0:
-            for card in self:
-                if card.name == card_name:
-                    self.remove(card)
-
-    def shuffle(self):
-        shuffle(self)
+    def show(self):
+        buff = "\n||############################################################################||"
+        for user in self.battlefields:
+            c_list = ["||{:*^25}".format(user.name)]
+            for card in self.battlefields[user]:
+                c_list.append("||({}) {:<20}|".format(self.battlefields[user].index(card), card.name))
+            p_list = [c_list[:]]
+        b_list = [zip_longest(*p_list)]
+        for lines in b_list:
+            for card in lines:
+                buff += "\n{}".format("||"+" "*20+"|" if lines[card] is None else lines[card])
+        return buff

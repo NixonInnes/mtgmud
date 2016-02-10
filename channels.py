@@ -1,7 +1,16 @@
 import mud
 import funcs
 
+# Non-User channels
+def do_action(client, msg_self, msg_others):
+    for c in client.user.table.users:
+        if c is client:
+            client.msg_client(c, "\n[ACT] You {}".format(msg_self))
+        else:
+            client.msg_client(c, "\n[ACT] {} {}".format(msg_others))
 
+
+# User channels
 def do_chat(client, msg):
     for c in mud.clients:
         if c.user is not None:
@@ -10,7 +19,6 @@ def do_chat(client, msg):
             else:
                 client.msg_client(c, "\n[chat] {}: {}".format(client.user.name, msg))
 
-
 def do_say(client, msg):
     for c in client.user.room.occupants:
         if c is client:
@@ -18,6 +26,12 @@ def do_say(client, msg):
         else:
             client.msg_client(c, "\n[say] {}: {}".format(client.user.name, msg))
 
+def do_tchat(client, msg):
+    for c in client.user.table.users:
+        if c is client:
+            client.msg_client(c, "\n[table] You: {}".format(msg))
+        else:
+            client.msg_client(c, "\n[table] {} : {}".format(client.user.name, msg))
 
 def do_whisper(client, msg):
     args = msg.split()
@@ -34,5 +48,6 @@ def do_whisper(client, msg):
 channels = {
     '.':  do_chat,
     '\'': do_say,
+    ':': do_tchat,
     '>':  do_whisper
 }

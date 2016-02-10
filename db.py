@@ -32,7 +32,8 @@ class User(Base):
     room = None
     table = None
     decks = relationship('Deck')
-    deck = Column(PickleType)
+    deck = None
+    deck_id = Column(Integer)
     _password = Column(String)
 
     @property

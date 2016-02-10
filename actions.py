@@ -1,8 +1,10 @@
 import os
+from random import shuffle
 
 import mud
-import db
+import db, models
 import funcs
+import channels
 
 #TODO: Tidy up the logic of these functions to be more consistent
 
@@ -17,11 +19,14 @@ def do_look(client, args):
 
 
 def do_who(client, args):
-    buff = "\n===== USER ========== ROOM ====="
+    buff = "\n||##########################[     USERS ONLINE     ]##########################||"
+    buff += "\n||{:^37}||{:^37}||".format('USER', 'ROOM')
+    buff += "\n||=====================================||=====================================||"
     for c in mud.clients:
         #TODO: fix formatting
-        buff += "\n\t{}\t{}".format(c.user.name, c.user.room.name)
-    buff += "\n\nOnline: {}".format(len(mud.clients))
+        buff += "\n||{:^37}||{:^37}||".format(c.user.name, c.user.room.name)
+    #buff += "|| Online: {}".format(len(mud.clients))
+    buff += "\n||############################################################################||"
     client.msg_self(buff)
 
 
@@ -103,14 +108,14 @@ def do_room(client, args):
             return
         client.msg_self("Room \"{}\" was not found.\n".format(room_name))
 
-    table = {
+    verbs = {
         'create': create,
         'delete': delete
     }
 
     if args is not None:
-        if args[0] in table:
-            table[args[0]](args[1:] if len(args) > 1 else None)
+        if args[0] in verbs:
+            verbs[args[0]](args[1:] if len(args) > 1 else None)
             return
 
     client.msg_self("\nRoom what?!")
@@ -138,7 +143,7 @@ def do_deck(client, args):
             client.msg_self(client.user.deck.show())
             return
 
-    def new(args):
+    def create(args):
         if args is None:
             client.msg_self("\nPlease specify a deck name.\nUsage: deck new <deck_name>")
         else:
@@ -165,6 +170,7 @@ def do_deck(client, args):
             deck_name = ' '.join(args)
             for d in client.user.decks:
                 if d.name == deck_name:
+                    client.user.deck_id = d.id
                     client.user.deck = d
                     client.msg_self("{} is now your active deck.".format(d.name))
                     return
@@ -198,8 +204,8 @@ def do_deck(client, args):
 
 
 
-    table = {
-        'new': new,
+    verbs = {
+        'create': create,
         'add': add,
         'set': set
     }
@@ -210,8 +216,8 @@ def do_deck(client, args):
         else:
             client.msg_self(client.user.deck.show())
     else:
-        if args[0] in table:
-            table[args[0]](args[1:] if len(args) > 1 else None)
+        if args[0] in verbs:
+            verbs[args[0]](args[1:] if len(args) > 1 else None)
         else:
             client.msg_self("\nDeck what?!")
 
@@ -221,6 +227,46 @@ def do_decks(client, args):
     for deck in client.user.decks:
         buff += "\n{}[{}] {}".format('*' if deck == client.user.deck else '', deck.no_cards, deck.name)
     client.msg_self(buff)
+
+
+def do_table(client, args):
+    def create(args):
+        if args is None:
+            do_help(client, ['table'])
+            return
+        table_name = ' '.join(args)
+        table_ = models.Table(client, table_name)
+        mud.tables.append(table_)
+        client.user.table = table_
+        client.user.room.tables.append(table_)
+
+
+    def stack(args):
+        if client.user.table is None or client.user.deck is None:
+            do_help(client, ['table', 'stack'])
+            return
+        client.user.table.libraries[client.user] = shuffle(client.user.deck.cards.get())
+        channels.do_action(client, "stacked your library.", "stacked their library.")
+
+
+    verbs = {
+        'create': create,
+        'stack': stack
+    }
+
+
+    if args is None:
+        if client.user.table is None:
+            do_help(client, ['table'])
+            return
+        client.msg_self(client.user.table.show())
+        return
+
+    if args[0] in verbs:
+        verbs[args[0]](args[1:] if len(args) > 1 else None)
+    else:
+        do_help(client, ['table'])
+
 
 
 actions = {
@@ -233,6 +279,7 @@ actions = {
     'goto':  do_goto,
     'card':  do_card,
     'deck':  do_deck,
-    'decks': do_decks
+    'decks': do_decks,
+    'table': do_table
 }
 

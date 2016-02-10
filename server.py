@@ -7,17 +7,29 @@ from actions import actions
 
 def startup():
     # Load rooms
+    print("Loading rooms...")
     rooms = db.session.query(db.Room).all()
-    for room in rooms:
-        mud.rooms.append(room)
 
     # Create a lobby if there are no rooms
     if len(mud.rooms) < 1:
-        mud.create_lobby()
+        print("No rooms found, creating default 'Lobby'...")
+        lobby = db.Room(
+            name="Lobby",
+            description="This is the MtGMUD Lobby."
+        )
+        db.session.add(lobby)
+        db.session.commit()
+        rooms.append(lobby)
+
+    for room in rooms:
+        mud.rooms.append(room)
+    print("Rooms loaded.")
 
     # populate cards if table is empty
     if len(db.session.query(db.Card).all()) < 1:
+        print("Card database is empty. \nNow populating...")
         funcs.update_cards()
+    print("Cards loaded.")
 
 
 class Protocol(asyncio.Protocol):
@@ -76,16 +88,15 @@ if __name__ == '__main__':
     coroutine = loop.create_server(Protocol, host=mud.HOST, port=mud.PORT)
     server = loop.run_until_complete(coroutine)
 
-    print("Server now listening on {}".format(server.sockets[0].getsockname()))
-
     print("Running start-up tasks...")
     startup()
     print("Completed start-up.")
+    print("Server now listening on {}".format(server.sockets[0].getsockname()))
 
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        print("Keyboard Interrupt! Exiting...")
+        print("Keyboard Interrupt! \nExiting...")
         pass
 
     server.close()
