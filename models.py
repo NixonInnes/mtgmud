@@ -35,3 +35,21 @@ class Table(object):
             for card in lines:
                 buff += "\n{}".format("||"+" "*20+"|" if lines[card] is None else lines[card])
         return buff
+
+
+class Card(object):
+    def __init__(self, card):
+        self.name = card.name
+        self.names = card.names
+        self.manaCost = card.manaCost
+        self.cmc = card.cmc
+        self.colors = card.colors
+        self.type = card.type
+        self.supertypes = card.supertypes
+        self.types = card.types
+        self.subtypes = card.subtypes
+        self.rarity = card.rarity
+        self.text = card.text
+        self.power = card.power
+        self.toughness = card.toughness
+        self.loyalty = card.loyalty

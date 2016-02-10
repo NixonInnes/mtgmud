@@ -1,9 +1,10 @@
 import os
-import json
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import create_engine, Column, Integer, String, PickleType, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+
+import models
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -113,7 +114,7 @@ class Deck(Base):
         for card in self.cards:
             s_card = session.query(Card).get(card)
             for c in self.cards[card]:
-                buff.append(s_card)
+                buff.append(models.Card(s_card))
         return buff
 
     def show(self):
