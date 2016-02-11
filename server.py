@@ -11,7 +11,7 @@ def startup():
     rooms = db.session.query(db.Room).all()
 
     # Create a lobby if there are no rooms
-    if len(mud.rooms) < 1:
+    if len(rooms) < 1:
         print("No rooms found, creating default 'Lobby'...")
         lobby = db.Room(
             name="Lobby",
@@ -19,9 +19,10 @@ def startup():
         )
         db.session.add(lobby)
         db.session.commit()
-        rooms.append(lobby)
 
+    rooms = db.session.query(db.Room).all()
     for room in rooms:
+        print("Loading room '{}'".format(room.name))
         mud.rooms.append(room)
     print("Rooms loaded.")
 
@@ -41,7 +42,7 @@ class Protocol(asyncio.Protocol):
 
         print("Connected: {}".format(self.addr))
         mud.clients.append(self)
-	#TODO: Add a welcome function
+        #TODO: Add a welcome function
         self.msg_self("\n########## Welcome to MtGMUD!! ##########\n\nLogin: <username> <password>\nRegister: register <username> <password> <password>")
         self.get_prompt()
 

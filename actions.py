@@ -5,6 +5,7 @@ import mud
 import db, models
 import funcs
 import channels
+import style
 
 #TODO: Tidy up the logic of these functions to be more consistent
 
@@ -19,14 +20,13 @@ def do_look(client, args):
 
 
 def do_who(client, args):
-    buff = "\n||##########################[     USERS ONLINE     ]##########################||"
-    buff += "\n||{:^37}||{:^37}||".format('USER', 'ROOM')
-    buff += "\n||=====================================||=====================================||"
-    for c in mud.clients:
-        #TODO: fix formatting
-        buff += "\n||{:^37}||{:^37}||".format(c.user.name, c.user.room.name)
-    #buff += "|| Online: {}".format(len(mud.clients))
-    buff += "\n||############################################################################||"
+    buff = style.header_80("ONLINE USERS")
+    buff += style.body_2cols_80('USERS', 'ROOM')
+    buff += style.ROW_LINE_80
+    for client in mud.clients:
+        buff += style.body_2cols_80(client.user.name, client.user.room.name)
+    buff += style.body_80("Online: {:^3}".format(len(mud.clients)), align='left')
+    buff += style.FOOTER_80
     client.msg_self(buff)
 
 
@@ -69,20 +69,24 @@ def do_card(client, args):
         else:
             find(args)
             return
-    client.msg_self("\nCard what??")
+    do_help(client, ['card'])
 
 
 def do_rooms(client, args):
-    buff = "\n========== ROOMS =========="
+    buff = style.header_80('ROOMS')
+    buff += style.body_2cols_80('ROOM', 'USERS')
+    buff += style.ROW_LINE_2COL_80
     for room in mud.rooms:
-        buff += "\n\t{}".format(room.name)
+        buff += style.body_2cols_80(room.name, ', '.join(client.user.name for client in room.occupants))
+    buff += style.BLANK_80
+    buff += style.FOOTER_80
     client.msg_self(buff)
 
 
 def do_room(client, args):
     def create(args):
         if args is None:
-            client.msg_self("\nPlease specify a room name.\nUsage: room create <room name>")
+            do_help(client, ['room'])
             return
         room_name = ' '.join(args)
         if funcs.get_room(room_name) is not None:
@@ -96,7 +100,7 @@ def do_room(client, args):
 
     def delete(args):
         if args is None:
-            client.msg_self("\nDelete which room?\nUsage: room delete <room name>")
+            do_help(client, ['room'])
             return
         room_name = ' '.join(args)
         room = funcs.get_room(room_name)
@@ -104,9 +108,9 @@ def do_room(client, args):
             mud.rooms.remove(room)
             db.session.delete(room)
             db.session.commit()
-            client.msg_self("Room \"{}\" has been deleted.\n".format(room.name))
+            client.msg_self("\nRoom '{}' has been deleted.".format(room.name))
             return
-        client.msg_self("Room \"{}\" was not found.\n".format(room_name))
+        client.msg_self("\nRoom '{}' was not found.".format(room_name))
 
     verbs = {
         'create': create,
@@ -118,12 +122,12 @@ def do_room(client, args):
             verbs[args[0]](args[1:] if len(args) > 1 else None)
             return
 
-    client.msg_self("\nRoom what?!")
+    do_help(client, ['room'])
 
 
 def do_goto(client, args):
     if args is None:
-        client.msg_self("\nGoto where?!")
+        do_help(client, ['goto'])
     else:
         room_name = ' '.join(args)
         room = funcs.get_room(room_name)
@@ -145,12 +149,12 @@ def do_deck(client, args):
 
     def create(args):
         if args is None:
-            client.msg_self("\nPlease specify a deck name.\nUsage: deck new <deck_name>")
+            do_help(client, ['deck'])
         else:
             deck_name = ' '.join(args)
             for d in client.user.decks:
                 if d.name == deck_name:
-                    client.msg_self("You already have a deck named '{}'.".format(deck_name))
+                    client.msg_self("\nYou already have a deck named '{}'.".format(deck_name))
                     return
             new_deck = db.Deck(
                 name = deck_name,
@@ -161,29 +165,29 @@ def do_deck(client, args):
             client.user.decks.append(new_deck)
             db.session.commit()
             client.user.deck = new_deck
-            client.msg_self("Created new deck '{}'.".format(new_deck.name))
+            client.msg_self("\nCreated new deck '{}'.".format(new_deck.name))
 
     def set(args):
         if args is None:
-            client.msg_self("\nSet what?!\nUsage: deck set <deck_name>")
+            do_help(client, ['deck'])
         else:
             deck_name = ' '.join(args)
             for d in client.user.decks:
                 if d.name == deck_name:
                     client.user.deck_id = d.id
                     client.user.deck = d
-                    client.msg_self("{} is now your active deck.".format(d.name))
+                    client.msg_self("\n{} is now your active deck.".format(d.name))
                     return
-            client.msg_self("Deck '{}' not found.".format(deck_name))
+            client.msg_self("\nDeck '{}' not found.".format(deck_name))
 
 
     def add(args):
         if args is None:
-            client.msg_client("\nAdd what?!\nUsage: deck add <card_name>")
+            do_help(client, ['deck'])
             return
 
         if client.user.deck is None:
-            client.msg_self("\nYou do not have an active deck. Use 'deck set <deck_name>' to set an active deck.")
+            do_help(client, ['room'])
             return
 
         card_name = ' '.join(args)
@@ -212,7 +216,7 @@ def do_deck(client, args):
 
     if args is None:
         if client.user.deck is None:
-            client.msg_self("\nYou do not have an active deck. Use 'deck set <deck_name>' to set an active deck.")
+            do_help(client, ['room'])
         else:
             client.msg_self(client.user.deck.show())
     else:
@@ -223,9 +227,11 @@ def do_deck(client, args):
 
 
 def do_decks(client, args):
-    buff = "\n##### Decks #####"
+    buff = style.header_40('Decks')
     for deck in client.user.decks:
-        buff += "\n{}[{}] {}".format('*' if deck == client.user.deck else '', deck.no_cards, deck.name)
+        buff += style.body_40("{:1}[{:^3}] {}".format('*' if deck == client.user.deck else '', deck.no_cards, deck.name), align='left')
+    buff += style.BLANK_40
+    buff += style.FOOTER_40
     client.msg_self(buff)
 
 

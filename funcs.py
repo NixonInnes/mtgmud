@@ -47,7 +47,7 @@ def load_user(client, user):
 
     client.user = user
 
-    client.room = mud.rooms[0]
+    client.user.room = mud.rooms[0]
     mud.rooms[0].occupants.append(client)
     actions.do_look(client, None)
 
