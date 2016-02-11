@@ -206,8 +206,6 @@ def do_deck(client, args):
         db.session.commit()
         client.msg_self("\nAdded '{}' to {}.".format(card_name, client.user.deck.name))
 
-
-
     verbs = {
         'create': create,
         'add': add,
