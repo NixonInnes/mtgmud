@@ -33,8 +33,8 @@ class User(Base):
     room = None
     table = None
     decks = relationship('Deck')
-    deck = None
     deck_id = Column(Integer)
+    deck = None
     _password = Column(String)
 
     @property

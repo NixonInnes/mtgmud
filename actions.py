@@ -176,6 +176,9 @@ def do_deck(client, args):
                 if d.name == deck_name:
                     client.user.deck_id = d.id
                     client.user.deck = d
+                    db.session.add(client.user)
+                    db.session.commit()
+                    print(client.user.deck)
                     client.msg_self("\n{} is now your active deck.".format(d.name))
                     return
             client.msg_self("\nDeck '{}' not found.".format(deck_name))
@@ -197,13 +200,16 @@ def do_deck(client, args):
             client.msg_self("\nCard '{}' not found.".format(card_name))
             return
 
+        print(client.user.deck.cards)
         if s_card.id in client.user.deck.cards:
             client.user.deck.cards[s_card.id] += 1
         else:
             client.user.deck.cards[s_card.id] = 1
-
-        db.session.add(client.user.deck)
+        print(client.user.deck.cards)
+        #db.session.add(client.user.deck)
+        print(client.user.deck.cards)
         db.session.commit()
+        print(client.user.deck.cards)
         client.msg_self("\nAdded '{}' to {}.".format(card_name, client.user.deck.name))
 
     verbs = {

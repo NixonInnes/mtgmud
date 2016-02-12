@@ -80,6 +80,8 @@ class Protocol(asyncio.Protocol):
     def connection_lost(self, ex):
         print("Disconnected: {}".format(self.addr))
         mud.clients.remove(self)
+        if self.room:
+            self.user.room.occupants.remove(self)
 
 
 if __name__ == '__main__':
