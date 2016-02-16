@@ -7,7 +7,7 @@ def do_action(client, msg_self, msg_others):
         if c is client:
             client.msg_client(c, "\n[ACT] You {}".format(msg_self))
         else:
-            client.msg_client(c, "\n[ACT] {} {}".format(msg_others))
+            client.msg_client(c, "\n[ACT] {} {}".format(client.user.name, msg_others))
 
 
 # User channels

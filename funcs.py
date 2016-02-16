@@ -46,14 +46,9 @@ def load_user(client, user):
             actions.do_quit(c, None)
 
     client.user = user
-
     client.user.room = mud.rooms[0]
     mud.rooms[0].occupants.append(client)
     actions.do_look(client, None)
-
-    if client.user.deck_id is not None:
-        client.user.deck = db.session.query(db.Deck).get(client.user.deck_id)
-
     client.get_prompt()
 
 

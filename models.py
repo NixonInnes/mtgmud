@@ -1,4 +1,5 @@
 from itertools import zip_longest
+from random import shuffle
 
 class Table(object):
     def __init__(self, client, name):
@@ -9,15 +10,15 @@ class Table(object):
         self.exiles = {}
         self.libraries = {}
         self.hands = {}
-        self.players = []
+        self.users = []
 
         self.add_player(client)
 
 
     def add_player(self, client):
-        self.players.append(client.user)
-        self.battlefields[client.user] = Pile()
-        self.graveyards[client.user] = Pile()
+        self.users.append(client.user)
+        self.battlefields[client.user] = []
+        self.graveyards[client.user] = []
         self.exiles[client.user] = Pile()
         self.libraries[client.user] = Pile()
         self.hands[client.user] = Pile()
@@ -26,14 +27,14 @@ class Table(object):
     def show(self):
         buff = "\n||############################################################################||"
         for user in self.battlefields:
-            c_list = ["||{:*^25}".format(user.name)]
+            card_list = ["||{:*^25}".format(user.name)]
             for card in self.battlefields[user]:
-                c_list.append("||({}) {:<20}|".format(self.battlefields[user].index(card), card.name))
-            p_list = [c_list[:]]
-        b_list = [zip_longest(*p_list)]
-        for lines in b_list:
-            for card in lines:
-                buff += "\n{}".format("||"+" "*20+"|" if lines[card] is None else lines[card])
+                card_list.append("||({}) {:<20}|".format(self.battlefields[user].index(card), card.name))
+            user_list = [card_list[:]]
+        battlefield_list = list(zip_longest(*user_list))
+        for lines in battlefield_list:
+            for line in lines:
+                buff += "\n{}".format("||"+" "*20+"|" if line is None else line)
         return buff
 
 
@@ -53,3 +54,14 @@ class Card(object):
         self.power = card.power
         self.toughness = card.toughness
         self.loyalty = card.loyalty
+
+class Pile(list):
+    def __init__(self):
+        super().__init__(self)
+        self.name = None
+
+    def shuffle(self):
+        shuffle(self)
+
+    def count(self):
+        return len(self)

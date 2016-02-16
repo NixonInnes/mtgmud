@@ -2,6 +2,7 @@ import os
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import create_engine, Column, Integer, String, PickleType, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.ext.declarative import declarative_base
 
 import models
@@ -33,8 +34,7 @@ class User(Base):
     room = None
     table = None
     decks = relationship('Deck')
-    deck_id = Column(Integer)
-    deck = None
+    deck = relationship('Deck', uselist=False, back_populates='user')
     _password = Column(String)
 
     @property
@@ -59,6 +59,7 @@ class Room(Base):
     name = Column(String)
     description = Column(String)
     occupants = []
+    tables = []
 
     def look(self):
         buff = "\n[{}]\n{}".format(self.name, self.description)
@@ -98,9 +99,10 @@ class Deck(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    owner_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship('User', back_populates='deck')
     # cards is a dict() of { card.id: no_of_cards }
-    cards = Column(PickleType)
+    cards = Column(MutableDict.as_mutable(PickleType))
 
     @property
     def no_cards(self):
@@ -113,7 +115,7 @@ class Deck(Base):
         buff = []
         for card in self.cards:
             s_card = session.query(Card).get(card)
-            for c in self.cards[card]:
+            for c in range(self.cards[card]):
                 buff.append(models.Card(s_card))
         return buff
 

@@ -1,5 +1,5 @@
 import os
-from random import shuffle
+from random import shuffle, randint
 
 import mud
 import db, models
@@ -42,6 +42,15 @@ def do_help(client, args):
     help_ = file.read()
     file.close()
     client.msg_self(help_)
+
+def do_dice(client, args):
+    if args is None:
+        args = [6] #Default dice size
+    if client.user.table is None or not str(args[0]).isdigit():
+        do_help(client, ['dice'])
+        return
+    channels.do_action(client, "rolled a {} on a {} sided dice.".format(randint(1,args[0]), args[0]), "rolled a {} on a {} sided dice.".format(randint(1,args[0]), args[0]))
+
 
 
 def do_card(client, args):
@@ -144,7 +153,15 @@ def do_goto(client, args):
 def do_deck(client, args):
     if args is None:
         if client.user.deck is not None:
-            client.msg_self(client.user.deck.show())
+            buff = style.header_40(client.user.deck.name)
+            num_cards = 0
+            for card in client.user.deck.cards:
+                num_cards += client.user.deck.cards[card]
+                s_card = db.session.query(db.Card).get(card)
+                buff += style.body_40("{:^3} x {:<25}".format(client.user.deck.cards[card], s_card.name))
+            buff += style.body_40(" [{}]".format(num_cards,''), align='left')
+            buff += style.FOOTER_40
+            client.msg_self(buff)
             return
 
     def create(args):
@@ -158,7 +175,7 @@ def do_deck(client, args):
                     return
             new_deck = db.Deck(
                 name = deck_name,
-                owner_id = client.user.id,
+                user_id = client.user.id,
                 cards = {}
             )
             db.session.add(new_deck)
@@ -167,7 +184,7 @@ def do_deck(client, args):
             client.user.deck = new_deck
             client.msg_self("\nCreated new deck '{}'.".format(new_deck.name))
 
-    def set(args):
+    def set_(args):
         if args is None:
             do_help(client, ['deck'])
         else:
@@ -179,7 +196,7 @@ def do_deck(client, args):
                     db.session.add(client.user)
                     db.session.commit()
                     print(client.user.deck)
-                    client.msg_self("\n{} is now your active deck.".format(d.name))
+                    client.msg_self("\n'{}' is now your active deck.".format(d.name))
                     return
             client.msg_self("\nDeck '{}' not found.".format(deck_name))
 
@@ -190,8 +207,14 @@ def do_deck(client, args):
             return
 
         if client.user.deck is None:
-            do_help(client, ['room'])
+            do_help(client, ['deck'])
             return
+
+        if str(args[0]).isdigit():
+            num_cards = int(args[0])
+            args = args[1:]
+        else:
+            num_cards = 1
 
         card_name = ' '.join(args)
         s_card = db.session.query(db.Card).filter_by(name=card_name).first()
@@ -200,22 +223,57 @@ def do_deck(client, args):
             client.msg_self("\nCard '{}' not found.".format(card_name))
             return
 
-        print(client.user.deck.cards)
+        card_count = 0
+        for card in client.user.deck.cards:
+            card_count += int(client.user.deck.cards[card])
+        if card_count >= 600:
+            client.msg_self("\nYour deck is at the card limit ({}).".format(card_count))
+
         if s_card.id in client.user.deck.cards:
-            client.user.deck.cards[s_card.id] += 1
+            client.user.deck.cards[s_card.id] += num_cards
         else:
-            client.user.deck.cards[s_card.id] = 1
-        print(client.user.deck.cards)
-        #db.session.add(client.user.deck)
-        print(client.user.deck.cards)
+            client.user.deck.cards[s_card.id] = num_cards
         db.session.commit()
-        print(client.user.deck.cards)
-        client.msg_self("\nAdded '{}' to {}.".format(card_name, client.user.deck.name))
+        client.msg_self("\nAdded {} x '{}' to '{}'.".format(num_cards, card_name, client.user.deck.name))
+
+
+    def remove(args):
+        if args is None:
+            do_help(client, ['deck'])
+            return
+
+        if client.user.deck is None:
+            do_help(client, ['deck'])
+            return
+
+        if str(args[0]).isdigit():
+            num_cards = int(args[0])
+            args = args[1:]
+        else:
+            num_cards = 1
+
+        card_name = ' '.join(args)
+        s_card = db.session.query(db.Card).filter_by(name=card_name).first()
+
+        if s_card is None:
+            client.msg_self("\nCard '{}' not found.".format(card_name))
+            return
+
+        for card in client.user.deck.cards:
+            if card == s_card.id:
+                client.user.deck.cards[card] -= num_cards
+                if client.user.deck.cards[card] < 1:
+                    client.user.deck.cards.pop(card, None)
+                db.session.commit()
+                client.msg_self("\nRemoved {} x '{}' from '{}'.".format(num_cards, card_name, client.user.deck.name))
+                return
+
 
     verbs = {
         'create': create,
         'add': add,
-        'set': set
+        'remove': remove,
+        'set': set_
     }
 
     if args is None:
@@ -255,9 +313,18 @@ def do_table(client, args):
         if client.user.table is None or client.user.deck is None:
             do_help(client, ['table', 'stack'])
             return
-        client.user.table.libraries[client.user] = shuffle(client.user.deck.cards.get())
+        client.user.table.libraries[client.user] = shuffle(client.user.deck.get())
         channels.do_action(client, "stacked your library.", "stacked their library.")
 
+    def draw(args):
+        #TODO Add draw function
+        if args is None:
+            pass
+        pass
+
+    def play(args):
+        #TODO Add play function
+        pass
 
     verbs = {
         'create': create,
@@ -283,7 +350,8 @@ actions = {
     'quit':  do_quit,
     'look':  do_look,
     'who':   do_who,
-    'help': do_help,
+    'help':  do_help,
+    'dice':  do_dice,
     'rooms': do_rooms,
     'room':  do_room,
     'goto':  do_goto,
