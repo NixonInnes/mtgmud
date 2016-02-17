@@ -34,7 +34,8 @@ class User(Base):
     decks = relationship('Deck')
     deck = relationship('Deck', uselist=False, back_populates='user')
     _password = Column(String)
-    room = None
+    room_id = Column(Integer, ForeignKey('rooms.id'))
+    room = relationship('Room', back_populates='occupants')
     table = None
 
     @property
@@ -53,23 +54,12 @@ class User(Base):
 
 
 class Room(Base):
-    __tablename__ = 'tables'
+    __tablename__ = 'rooms'
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
-
-    @property
-    def occupants(self):
-        return self._occupants
-
-    def add_occupant(self, client):
-        self._occupants.appent(client)
-
-    def __init__(self, **kwargs):
-        super(Room, self).__init__(**kwargs)
-        self._occupants = []
-        self._tables = []
+    occupants = relationship('User', back_populates='room')
 
     def __repr__(self):
         return "<Room(name='{}', description='{}')>".format(self.name, self.description)

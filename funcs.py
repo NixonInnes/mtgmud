@@ -49,7 +49,7 @@ def load_user(client, user):
 
     client.user = user
     client.user.room = get_lobby()
-    client.user.room.occupants.append(client)
+    client.user.room.occupants.append(client.user)
     actions.do_look(client, None)
     client.get_prompt()
 

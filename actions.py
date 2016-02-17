@@ -35,11 +35,11 @@ def do_look(client, args):
     buff = style.room_name(client.user.room.name)
     if client.user.room.description:
         buff += style.room_desc(client.user.room.description)
-    client_list = ['You']
-    for c in client.user.room.occupants:
-        if c is not client:
-            client_list.append(c.user.name)
-    buff += style.room_occupants(client_list)
+    user_list = ['You']
+    for u in client.user.room.occupants:
+        if u is not client.user:
+            user_list.append(u.name)
+    buff += style.room_occupants(user_list)
     client.msg_self(buff)
 
 
@@ -141,7 +141,7 @@ def do_rooms(client, args):
     buff += style.body_2cols_80('ROOM', 'USERS')
     buff += style.ROW_LINE_2COL_80
     for room in db.session.query(db.Room).all():
-        buff += style.body_2cols_80(room.name, ', '.join(client.user.name for client in room.occupants))
+        buff += style.body_2cols_80(room.name, ', '.join(user.name for user in room.occupants))
     buff += style.BLANK_80
     buff += style.FOOTER_80
     client.msg_self(buff)
