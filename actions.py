@@ -153,8 +153,8 @@ def do_room(client, args):
             do_help(client, ['room'])
             return
         room_name = ' '.join(args)
-        if funcs.get_room(room_name) is not None:
-            client.msg("\nThe room name '{}' is already taken, sorry.".format(room_name))
+        if db.session.query(db.Room).filter_by(name=room_name).first() is not None:
+            client.msg_self("\nThe room name '{}' is already taken, sorry.".format(room_name))
             return
         room = db.Room(name=str(room_name))
         db.session.add(room)
@@ -168,7 +168,6 @@ def do_room(client, args):
         room_name = ' '.join(args)
         room = funcs.get_room(room_name)
         if room is not None:
-            mud.rooms.pop(room, None)
             db.session.delete(room)
             db.session.commit()
             client.msg_self("\nRoom '{}' has been deleted.".format(room.name))
@@ -192,12 +191,12 @@ def do_goto(client, args):
         do_help(client, ['goto'])
     else:
         room_name = ' '.join(args)
-        room = funcs.get_room(room_name)
+        room = db.session.query(db.Room).filter_by(name=room_name).first()
         if room is not None:
             if client.user.room is not None:
-                client.user.room.occupants.remove(client)
+                client.user.room.occupants.remove(client.user)
             client.user.room = room
-            client.user.room.occupants.append(client)
+            db.session.commit()
             do_look(client, None)
             return
         client.msg_self("\nGoto where?!")

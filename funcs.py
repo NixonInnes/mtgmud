@@ -49,13 +49,13 @@ def load_user(client, user):
 
     client.user = user
     client.user.room = get_lobby()
-    client.user.room.occupants.append(client.user)
+    db.session.commit()
     actions.do_look(client, None)
     client.get_prompt()
 
-def get_client(user_name):
+def get_client(user):
     for client in mud.clients:
-        if client.user.name == user_name:
+        if client.user == user:
             return client
     return None
 

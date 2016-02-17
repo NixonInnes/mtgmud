@@ -20,7 +20,8 @@ def do_chat(client, msg):
                 client.msg_client(c, "\n[chat] {}: {}".format(client.user.name, msg))
 
 def do_say(client, msg):
-    for c in client.user.room.occupants:
+    for user in client.user.room.occupants:
+        c = funcs.get_client(user)
         if c is client:
             client.msg_client(c, "\n[say] You: {}".format(msg))
         else:
