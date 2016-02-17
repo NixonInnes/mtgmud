@@ -3,7 +3,7 @@ import funcs
 
 # Non-User channels
 def do_action(client, msg_self, msg_others):
-    for c in client.user.table.users:
+    for c in client.user.table.clients:
         if c is client:
             client.msg_client(c, "\n[ACT] You {}".format(msg_self))
         else:
@@ -27,7 +27,7 @@ def do_say(client, msg):
             client.msg_client(c, "\n[say] {}: {}".format(client.user.name, msg))
 
 def do_tchat(client, msg):
-    for c in client.user.table.users:
+    for c in client.user.table.clients:
         if c is client:
             client.msg_client(c, "\n[table] You: {}".format(msg))
         else:

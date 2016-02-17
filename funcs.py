@@ -3,6 +3,8 @@ import mud
 import db
 import actions
 
+def get_lobby():
+    return db.session.query(db.Room).filter_by(name=mud.LOBBY_ROOM_NAME).first()
 
 def login(client, args):
     if len(args) == 0:
@@ -46,17 +48,10 @@ def load_user(client, user):
             actions.do_quit(c, None)
 
     client.user = user
-    client.user.room = mud.rooms[0]
-    mud.rooms[0].occupants.append(client)
+    client.user.room = get_lobby()
+    client.user.room.occupants.append(client)
     actions.do_look(client, None)
     client.get_prompt()
-
-
-def get_room(room_name):
-    for room in mud.rooms:
-        if room.name == room_name:
-            return room
-    return None
 
 def get_client(user_name):
     for client in mud.clients:

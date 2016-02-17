@@ -6,31 +6,21 @@ from channels import channels
 from actions import actions
 
 def startup():
-    # Load rooms
-    print("Loading rooms...")
-    rooms = db.session.query(db.Room).all()
-
+    # Check if there are any rooms
     # Create a lobby if there are no rooms
-    if len(rooms) < 1:
-        print("No rooms found, creating default 'Lobby'...")
+    if funcs.get_lobby() is None:
+        print("No lobby found, creating...")
         lobby = db.Room(
-            name="Lobby",
-            description="This is the MtGMUD Lobby."
+            name=mud.LOBBY_ROOM_NAME,
+            description=mud.LOBBY_ROOM_DESC
         )
         db.session.add(lobby)
         db.session.commit()
-
-    rooms = db.session.query(db.Room).all()
-    for room in rooms:
-        print("Loading room '{}'".format(room.name))
-        mud.rooms.append(room)
-    print("Rooms loaded.")
 
     # populate cards if table is empty
     if len(db.session.query(db.Card).all()) < 1:
         print("Card database is empty. \nNow populating...")
         funcs.update_cards()
-    print("Cards loaded.")
 
 
 class Protocol(asyncio.Protocol):
@@ -69,7 +59,14 @@ class Protocol(asyncio.Protocol):
         self.get_prompt()
 
     def get_prompt(self):
-        self.transport.write("\n>>> ".encode())
+        # [username]<deck (60)>>>
+        buff = "\n"
+        if self.user is not None:
+            buff += "[{}]".format(self.user.name)
+            if self.user.deck is not None:
+                buff += "<{} ({})>".format(self.user.deck.name, self.user.deck.no_cards)
+        buff += ">> "
+        self.transport.write(buff.encode())
 
     def msg_self(self, msg):
         self.transport.write(msg.encode())
@@ -80,7 +77,7 @@ class Protocol(asyncio.Protocol):
     def connection_lost(self, ex):
         print("Disconnected: {}".format(self.addr))
         mud.clients.remove(self)
-        if self.room:
+        if self.user.room:
             self.user.room.occupants.remove(self)
 
 

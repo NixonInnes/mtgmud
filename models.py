@@ -10,26 +10,36 @@ class Table(object):
         self.exiles = {}
         self.libraries = {}
         self.hands = {}
-        self.users = []
-
-        self.add_player(client)
-
+        self.clients = []
 
     def add_player(self, client):
-        self.users.append(client.user)
-        self.battlefields[client.user] = []
-        self.graveyards[client.user] = []
-        self.exiles[client.user] = Pile()
-        self.libraries[client.user] = Pile()
-        self.hands[client.user] = Pile()
+        self.clients.append(client)
+        self.battlefields[client] = []
+        self.graveyards[client] = Pile()
+        self.exiles[client] = Pile()
+        self.libraries[client] = Pile()
+        self.hands[client] = []
 
+    #TODO: move these functions back into actions
+    def stack_library(self, client, card_list):
+        for card in card_list:
+            self.libraries[client].append(card)
 
+    def shuffle_library(self, client):
+        self.libraries[client].shuffle()
+
+    def draw_card(self, client, num=1):
+        for i in range(int(num)):
+            self.hands[client].append(self.libraries[client][0])
+            self.libraries[client].pop(0)
+
+    #TODO: This needs moved into an action
     def show(self):
         buff = "\n||############################################################################||"
-        for user in self.battlefields:
-            card_list = ["||{:*^25}".format(user.name)]
-            for card in self.battlefields[user]:
-                card_list.append("||({}) {:<20}|".format(self.battlefields[user].index(card), card.name))
+        for client in self.battlefields:
+            card_list = ["||{:*^25}".format(client.user.name)]
+            for card in self.battlefields[client]:
+                card_list.append("||({}) {:<20}|".format(self.battlefields[client].index(card), card.name))
             user_list = [card_list[:]]
         battlefield_list = list(zip_longest(*user_list))
         for lines in battlefield_list:
@@ -54,6 +64,10 @@ class Card(object):
         self.power = card.power
         self.toughness = card.toughness
         self.loyalty = card.loyalty
+
+        self.tapped = False
+        self.counters = 0
+
 
 class Pile(list):
     def __init__(self):

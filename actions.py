@@ -10,27 +10,66 @@ import style
 #TODO: Tidy up the logic of these functions to be more consistent
 
 def do_quit(client, args):
+    """
+    Closes the client connection.
+
+    :param client: server.Protocol
+    :param args: None
+    :return: None
+    """
     client.msg_self("\nYou are wracked with uncontrollable pain as you are extracted from the Matrix.\n")
     client.transport.close()
 
 
 def do_look(client, args):
-    if client.user.room is not None:
-        client.msg_self(client.user.room.look())
+    """
+    Sends room information to the client.
+
+    :param client: server.Protocol()
+    :param args: None
+    :return: None
+    """
+    if client.user.room is None:
+        client.msg_self("\nUmm, something's gone terribly, terribly wrong!")
+        return
+    buff = style.room_name(client.user.room.name)
+    if client.user.room.description:
+        buff += style.room_desc(client.user.room.description)
+    client_list = ['You']
+    for c in client.user.room.occupants:
+        if c is not client:
+            client_list.append(c.user.name)
+    buff += style.room_occupants(client_list)
+    client.msg_self(buff)
+
 
 
 def do_who(client, args):
+    """
+    Sends a list of connected users to the client.
+
+    :param client:
+    :param args:
+    :return: None
+    """
     buff = style.header_80("ONLINE USERS")
     buff += style.body_2cols_80('USERS', 'ROOM')
     buff += style.ROW_LINE_80
-    for client in mud.clients:
-        buff += style.body_2cols_80(client.user.name, client.user.room.name)
+    for c in mud.clients:
+        buff += style.body_2cols_80(c.user.name, c.user.room.name)
     buff += style.body_80("Online: {:^3}".format(len(mud.clients)), align='left')
     buff += style.FOOTER_80
     client.msg_self(buff)
 
 
 def do_help(client, args):
+    """
+    Reads a help file and sends the contents to the client.
+
+    :param client: server.Protocol()
+    :param args: help filename
+    :return: None
+    """
     if args is None:
         file = open('help/help', 'r')
     else:
@@ -43,7 +82,15 @@ def do_help(client, args):
     file.close()
     client.msg_self(help_)
 
+
 def do_dice(client, args):
+    """
+    Simulates a dice roll, and sends results to clients on the initiating clients table.
+
+    :param client: server.Protocol()
+    :param args: Dice size
+    :return: None
+    """
     if args is None:
         args = [6] #Default dice size
     if client.user.table is None or not str(args[0]).isdigit():
@@ -52,15 +99,21 @@ def do_dice(client, args):
     channels.do_action(client, "rolled a {} on a {} sided dice.".format(randint(1,args[0]), args[0]), "rolled a {} on a {} sided dice.".format(randint(1,args[0]), args[0]))
 
 
-
 def do_card(client, args):
+    """
+    Queries the card database, and sends results to the client.
+
+    :param client: server.Protocol()
+    :param args: |find|
+    :return: None
+    """
     def find(args):
         card_name = ' '.join(args)
         card = db.session.query(db.Card).filter_by(name=card_name).first()
         if card is None:
             client.msg_self("\nCould not find card: {}".format(card_name))
             return
-        buff = "\n{} \t {}".format(card.name, card.manaCost)
+        buff = "\n{}{}".format(card.name, card.manaCost)
         buff += "\n{}".format(card.type)
         buff += "\n{}".format(card.text)
         if card.loyalty is not None:
@@ -69,11 +122,13 @@ def do_card(client, args):
             buff += "\n[{}/{}]".format(card.power, card.toughness)
         client.msg_self(buff)
 
-    table = { 'find': find }
+    verbs = {
+        'find': find
+    }
 
     if args is not None:
-        if args[0] in table:
-            table[args[0]](args[1:] if len(args) > 1 else None)
+        if args[0] in verbs:
+            verbs[args[0]](args[1:] if len(args) > 1 else None)
             return
         else:
             find(args)
@@ -85,7 +140,7 @@ def do_rooms(client, args):
     buff = style.header_80('ROOMS')
     buff += style.body_2cols_80('ROOM', 'USERS')
     buff += style.ROW_LINE_2COL_80
-    for room in mud.rooms:
+    for room in db.session.query(db.Room).all():
         buff += style.body_2cols_80(room.name, ', '.join(client.user.name for client in room.occupants))
     buff += style.BLANK_80
     buff += style.FOOTER_80
@@ -104,8 +159,7 @@ def do_room(client, args):
         room = db.Room(name=str(room_name))
         db.session.add(room)
         db.session.commit()
-        mud.rooms.append(room)
-        client.msg_self("\nRoom created: {}".format(room.name))
+        client.msg_self("\nRoom created: {}".format(room_name))
 
     def delete(args):
         if args is None:
@@ -114,7 +168,7 @@ def do_room(client, args):
         room_name = ' '.join(args)
         room = funcs.get_room(room_name)
         if room is not None:
-            mud.rooms.remove(room)
+            mud.rooms.pop(room, None)
             db.session.delete(room)
             db.session.commit()
             client.msg_self("\nRoom '{}' has been deleted.".format(room.name))
@@ -130,7 +184,6 @@ def do_room(client, args):
         if args[0] in verbs:
             verbs[args[0]](args[1:] if len(args) > 1 else None)
             return
-
     do_help(client, ['room'])
 
 
@@ -205,30 +258,24 @@ def do_deck(client, args):
         if args is None:
             do_help(client, ['deck'])
             return
-
         if client.user.deck is None:
             do_help(client, ['deck'])
             return
-
         if str(args[0]).isdigit():
             num_cards = int(args[0])
             args = args[1:]
         else:
             num_cards = 1
-
         card_name = ' '.join(args)
         s_card = db.session.query(db.Card).filter_by(name=card_name).first()
-
         if s_card is None:
             client.msg_self("\nCard '{}' not found.".format(card_name))
             return
-
         card_count = 0
         for card in client.user.deck.cards:
             card_count += int(client.user.deck.cards[card])
         if card_count >= 600:
             client.msg_self("\nYour deck is at the card limit ({}).".format(card_count))
-
         if s_card.id in client.user.deck.cards:
             client.user.deck.cards[s_card.id] += num_cards
         else:
@@ -241,24 +288,20 @@ def do_deck(client, args):
         if args is None:
             do_help(client, ['deck'])
             return
-
         if client.user.deck is None:
             do_help(client, ['deck'])
             return
-
         if str(args[0]).isdigit():
             num_cards = int(args[0])
             args = args[1:]
         else:
             num_cards = 1
-
         card_name = ' '.join(args)
         s_card = db.session.query(db.Card).filter_by(name=card_name).first()
 
         if s_card is None:
             client.msg_self("\nCard '{}' not found.".format(card_name))
             return
-
         for card in client.user.deck.cards:
             if card == s_card.id:
                 client.user.deck.cards[card] -= num_cards
@@ -267,7 +310,6 @@ def do_deck(client, args):
                 db.session.commit()
                 client.msg_self("\nRemoved {} x '{}' from '{}'.".format(num_cards, card_name, client.user.deck.name))
                 return
-
 
     verbs = {
         'create': create,
@@ -305,30 +347,67 @@ def do_table(client, args):
         table_name = ' '.join(args)
         table_ = models.Table(client, table_name)
         mud.tables.append(table_)
-        client.user.table = table_
         client.user.room.tables.append(table_)
+        do_table(client, ['join', table_name])
 
+    def join(args):
+        if args is None:
+            do_help(client, ['table', 'join'])
+            return
+        table_name = ' '.join(args)
+        for t in client.user.room.tables:
+            if table_name == t.name:
+                if len(t.clients) < 2:
+                    t.add_player(client)
+                    client.user.table = t
+                    channels.do_action(client, "joined table {}.".format(t.name), "joined the table.")
+                    return
+        client.msg_self("\nCould not find table '{}".format(table_name))
 
     def stack(args):
         if client.user.table is None or client.user.deck is None:
             do_help(client, ['table', 'stack'])
             return
-        client.user.table.libraries[client.user] = shuffle(client.user.deck.get())
+        client.user.table.stack_library(client, client.user.deck.get())
+        client.user.table.shuffle_library(client)
         channels.do_action(client, "stacked your library.", "stacked their library.")
 
     def draw(args):
-        #TODO Add draw function
         if args is None:
-            pass
-        pass
+            client.user.table.draw_card(client)
+            channels.do_action(client, "draw a card.", "draws a card.")
+            return
+        if not str(args[0]).isdigit():
+            do_help(client, ['table', 'draw'])
+            return
+        client.user.table.draw_card(client, args[0])
+        channels.do_action(client, "draw {} cards.".format(args[0]), "draws {} cards.".format(client.user.name, args[0]))
+
+    def hand(args):
+        buff = style.header_40("Hand")
+        for card in client.user.table.hands[client]:
+            buff += style.body_40("({:2}) {:<25}".format(client.user.table.hands[client].index(card), card.name))
+        buff += style.FOOTER_40
+        client.msg_self(buff)
 
     def play(args):
-        #TODO Add play function
-        pass
+        if args is None or not str(args[0]).isdigit():
+            do_help(client ['table', 'play'])
+            return
+        if not client.user.table.hands[client][int(args[0])]:
+            do_help(client ['table', 'play'])
+            return
+        client.user.table.battlefields[client].append(client.user.table.hands[client][int(args[0])])
+        channels.do_action(client, "play {}.".format(client.user.table.hands[client][int(args[0])].name), "plays {}.".format(client.user.table.hands[client][int(args[0])].name))
+        client.user.table.hands[client].pop(int(args[0]))
 
     verbs = {
         'create': create,
-        'stack': stack
+        'join': join,
+        'stack': stack,
+        'draw': draw,
+        'hand': hand,
+        'play': play
     }
 
 
@@ -343,8 +422,6 @@ def do_table(client, args):
         verbs[args[0]](args[1:] if len(args) > 1 else None)
     else:
         do_help(client, ['table'])
-
-
 
 actions = {
     'quit':  do_quit,

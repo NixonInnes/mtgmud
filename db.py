@@ -31,11 +31,11 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     admin = Column(String, default=False)
-    room = None
-    table = None
     decks = relationship('Deck')
     deck = relationship('Deck', uselist=False, back_populates='user')
     _password = Column(String)
+    room = None
+    table = None
 
     @property
     def password(self):
@@ -58,13 +58,18 @@ class Room(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
-    occupants = []
-    tables = []
 
-    def look(self):
-        buff = "\n[{}]\n{}".format(self.name, self.description)
-        buff += "\n# " + ", ".join([client.user.name for client in self.occupants])
-        return buff
+    @property
+    def occupants(self):
+        return self._occupants
+
+    def add_occupant(self, client):
+        self._occupants.appent(client)
+
+    def __init__(self, **kwargs):
+        super(Room, self).__init__(**kwargs)
+        self._occupants = []
+        self._tables = []
 
     def __repr__(self):
         return "<Room(name='{}', description='{}')>".format(self.name, self.description)

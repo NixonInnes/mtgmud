@@ -1,3 +1,5 @@
+from textwrap import wrap
+
 FOOTER_80 =        "\n||############################################################################||"
 BLANK_80 =         "\n||                                                                            ||"
 ROW_LINE_80 =      "\n||============================================================================||"
@@ -50,4 +52,23 @@ def body_40(string, align='center'):
 
 def body_2cols_40(stringA, stringB):
     buff = "\n|| {:^14} || {:^14} ||".format(stringA, stringB)
+    return buff
+
+def room_name(name):
+    buff = "\n.-~~~~~~~~~~~~~~~~~~~~~~~~~~{{ {:^20} }}~~~~~~~~~~~~~~~~~~~~~~~~~~-.".format(name)
+    return buff
+
+def room_desc(desc):
+    buff = "\n"
+    desc = wrap(desc, width=72)
+    for line in desc:
+        buff += ":   {:<72}   :".format(line)
+    return buff
+
+def room_occupants(occs):
+    buff = "\n"
+    occs = ', '.join(occs)
+    occs = wrap(occs, width=76)
+    for line in occs:
+        buff += "## {:<74} ##".format(line)
     return buff
