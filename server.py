@@ -6,8 +6,7 @@ from channels import channels
 from actions import actions
 
 def startup():
-    # Check if there are any rooms
-    # Create a lobby if there are no rooms
+    # Check for Lobby & create one if not
     if funcs.get_lobby() is None:
         print("No lobby found, creating...")
         lobby = db.Room(
@@ -17,7 +16,11 @@ def startup():
         db.session.add(lobby)
         db.session.commit()
 
-    # populate cards if table is empty
+    # Clean rooms if the server shutdown unexpectedly
+    for room in db.session.query(db.Room).all():
+        room.occupants.clear()
+
+    # Populate cards if table is empty
     if len(db.session.query(db.Card).all()) < 1:
         print("Card database is empty. \nNow populating...")
         funcs.update_cards()
@@ -78,7 +81,7 @@ class Protocol(asyncio.Protocol):
         print("Disconnected: {}".format(self.addr))
         mud.clients.remove(self)
         if self.user.room:
-            self.user.room.occupants.remove(self)
+            self.user.room.occupants.remove(self.user)
 
 
 if __name__ == '__main__':

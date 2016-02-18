@@ -72,3 +72,15 @@ def room_occupants(occs):
     for line in occs:
         buff += "## {:<74} ##".format(line)
     return buff
+
+def table_header(name):
+    buff = "\n============================[[ {:^20} ]]============================".format(name)
+    return buff
+
+def table_user(name):
+    buff = "+++++ {:^28} ++++|".format(name)
+    return buff
+
+def table_card(index, card):
+    buff = "+ ({:2}) [{:1}] {:<27} |".format(index, "T" if card.tapped else "", card.name)
+    return buff

@@ -2,7 +2,7 @@ import os
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import create_engine, Column, Integer, String, PickleType, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.ext.mutable import Mutable, MutableDict
 from sqlalchemy.ext.declarative import declarative_base
 
 import models
@@ -60,6 +60,10 @@ class Room(Base):
     name = Column(String)
     description = Column(String)
     occupants = relationship('User', back_populates='room')
+
+    def __init__(self, **kwargs):
+        super(Room, self).__init__(**kwargs)
+        self.tables = []
 
     def __repr__(self):
         return "<Room(name='{}', description='{}')>".format(self.name, self.description)

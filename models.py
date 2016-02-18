@@ -1,45 +1,46 @@
 from itertools import zip_longest
 from random import shuffle
+import style
 
 class Table(object):
-    def __init__(self, client, name):
-        self.owner = client
+    def __init__(self, user, name):
+        self.owner = user
         self.name = name
         self.battlefields = {}
         self.graveyards = {}
         self.exiles = {}
         self.libraries = {}
         self.hands = {}
-        self.clients = []
+        self.users = []
 
-    def add_player(self, client):
-        self.clients.append(client)
-        self.battlefields[client] = []
-        self.graveyards[client] = Pile()
-        self.exiles[client] = Pile()
-        self.libraries[client] = Pile()
-        self.hands[client] = []
+    def add_player(self, user):
+        self.users.append(user)
+        self.battlefields[user] = []
+        self.graveyards[user] = Pile()
+        self.exiles[user] = Pile()
+        self.libraries[user] = Pile()
+        self.hands[user] = []
 
     #TODO: move these functions back into actions
-    def stack_library(self, client, card_list):
+    def stack_library(self, user, card_list):
         for card in card_list:
-            self.libraries[client].append(card)
+            self.libraries[user].append(card)
 
-    def shuffle_library(self, client):
-        self.libraries[client].shuffle()
+    def shuffle_library(self, user):
+        self.libraries[user].shuffle()
 
-    def draw_card(self, client, num=1):
+    def draw_card(self, user, num=1):
         for i in range(int(num)):
-            self.hands[client].append(self.libraries[client][0])
-            self.libraries[client].pop(0)
+            self.hands[user].append(self.libraries[user][0])
+            self.libraries[user].pop(0)
 
     #TODO: This needs moved into an action
     def show(self):
-        buff = "\n||############################################################################||"
-        for client in self.battlefields:
-            card_list = ["||{:*^25}".format(client.user.name)]
-            for card in self.battlefields[client]:
-                card_list.append("||({}) {:<20}|".format(self.battlefields[client].index(card), card.name))
+        buff = style.table_header(self.name)
+        for user in self.battlefields:
+            card_list = [style.table_user(user.name)]
+            for card in self.battlefields[user]:
+                card_list.append(style.table_card(self.battlefields[user].index(card), card))
             user_list = [card_list[:]]
         battlefield_list = list(zip_longest(*user_list))
         for lines in battlefield_list:

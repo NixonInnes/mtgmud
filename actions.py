@@ -344,7 +344,7 @@ def do_table(client, args):
             do_help(client, ['table'])
             return
         table_name = ' '.join(args)
-        table_ = models.Table(client, table_name)
+        table_ = models.Table(client.user, table_name)
         mud.tables.append(table_)
         client.user.room.tables.append(table_)
         do_table(client, ['join', table_name])
@@ -356,8 +356,8 @@ def do_table(client, args):
         table_name = ' '.join(args)
         for t in client.user.room.tables:
             if table_name == t.name:
-                if len(t.clients) < 2:
-                    t.add_player(client)
+                if len(t.clients) < 2 or client.user in t.users:
+                    t.add_player(client.user)
                     client.user.table = t
                     channels.do_action(client, "joined table {}.".format(t.name), "joined the table.")
                     return
