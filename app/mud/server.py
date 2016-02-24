@@ -11,7 +11,7 @@ class Mud(object):
         self.rooms = []
         self.tables = []
 
-        # Check for Lobby & create one if not
+        print("Checking Room database...")
         if self.get_lobby() is None:
             print("No lobby found, creating...")
             lobby = db_models.Room(
@@ -20,16 +20,21 @@ class Mud(object):
             )
             db.session.add(lobby)
             db.session.commit()
+            print("Lobby created.")
 
-        # Load rooms - This needs moved
+        print("Loading rooms...")
         for i in db.session.query(db_models.Room).all():
+            print("Loading room: {}".format(i.name))
             room = v_models.Room.load(i)
             self.rooms.append(room)
+        print("Rooms loaded.")
 
-        # Populate cards if table is empty
+        print("Checking Card database...")
         if len(db.session.query(db_models.Card).all()) < 1:
             print("Card database is empty. \nNow populating...")
             self.update_cards()
+        else:
+            print("Cards exist.")
 
     def get_lobby(self):
         return db.session.query(db.models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first()

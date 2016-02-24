@@ -80,6 +80,10 @@ class Card(Base):
     toughness = Column(String)
     loyalty = Column(String)
 
+    @staticmethod
+    def search(card_name):
+        return session.query(Card).filter(Card.name.like(card_name)).all()
+
     def __repr__(self):
         return "<Card(name='{}')>".format(self.name)
 

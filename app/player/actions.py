@@ -1,7 +1,7 @@
 import os
 from random import randint
 
-from app import db, server, style
+from app import config, db, mud, server, style
 from . import channels
 
 #TODO: Tidy up the logic of these functions to be more consistent
@@ -146,17 +146,13 @@ def do_card(client, args):
     """
     def find(args):
         card_name = ' '.join(args)
-        card = db.session.query(db.models.Card).filter_by(name=card_name).first()
-        if card is None:
+        cards = db.models.Card.search(card_name)
+        if len(cards) < 1:
             client.msg_self("\nCould not find card: {}".format(card_name))
             return
-        buff = "\n{}{}".format(card.name, card.manaCost)
-        buff += "\n{}".format(card.type)
-        buff += "\n{}".format(card.text)
-        if card.loyalty is not None:
-            buff += "\n[{}]".format(card.loyalty)
-        if card.power is not None and card.toughness is not None:
-            buff += "\n[{}/{}]".format(card.power, card.toughness)
+        buff = ""
+        for card in cards:
+            buff += style.card(card)
         client.msg_self(buff)
 
     verbs = {
@@ -194,6 +190,8 @@ def do_room(client, args):
             client.msg_self("\nThe room name '{}' is already taken, sorry.".format(room_name))
             return
         room = db.models.Room(name=str(room_name))
+        vroom = mud.models.Room.load(room)
+        server.rooms.append(vroom)
         db.session.add(room)
         db.session.commit()
         client.msg_self("\nRoom created: {}".format(room_name))
@@ -203,10 +201,15 @@ def do_room(client, args):
             do_help(client, ['room'])
             return
         room_name = ' '.join(args)
-        room = db.session.query(db.models.Room).filter_by(name=room_name).first()
+        for r in server.rooms:
+            if r.name == room_name:
+                room = r
         if room is not None:
+            for occupant in room.occupants:
+                do_goto(occupant, config.LOBBY_ROOM_NAME)
+                client.msg_client(occupant, "\nThe lights flicker and you are suddenly in {}. Weird...".format(config.LOBBY_ROOM_NAME))
             server.rooms.remove(room)
-            db.session.delete(room)
+            db.session.delete(room.db)
             db.session.commit()
             client.msg_self("\nRoom '{}' has been deleted.".format(room.name))
             return
@@ -304,10 +307,14 @@ def do_deck(client, args):
         else:
             num_cards = 1
         card_name = ' '.join(args)
-        s_card = db.session.query(db.models.Card).filter_by(name=card_name).first()
-        if s_card is None:
+        s_cards = db.models.Card.search(card_name)
+        if len(s_cards) == 0:
             client.msg_self("\nCard '{}' not found.".format(card_name))
             return
+        if len(s_cards) > 1:
+            client.msg_self("\nMultiple cards called {}: {}\nPlease be more specific.".format(card_name, ', '.join(card.name for card in s_cards)))
+            return
+        s_card = s_cards[0]
         card_count = 0
         for card in client.user.deck.cards:
             card_count += int(client.user.deck.cards[card])
@@ -318,7 +325,7 @@ def do_deck(client, args):
         else:
             client.user.deck.cards[s_card.id] = num_cards
         db.session.commit()
-        client.msg_self("\nAdded {} x '{}' to '{}'.".format(num_cards, card_name, client.user.deck.name))
+        client.msg_self("\nAdded {} x '{}' to '{}'.".format(num_cards, s_card.name, client.user.deck.name))
 
 
     def remove(args):
@@ -334,18 +341,21 @@ def do_deck(client, args):
         else:
             num_cards = 1
         card_name = ' '.join(args)
-        s_card = db.session.query(db.models.Card).filter_by(name=card_name).first()
-
-        if s_card is None:
+        s_cards = db.models.Card.search(card_name)
+        if len(s_cards) == 0:
             client.msg_self("\nCard '{}' not found.".format(card_name))
             return
+        if len(s_cards) > 1:
+            client.msg_self("\nMultiple cards called {}: {}\nPlease be more specific.".format(card_name, ', '.join(card.name for card in s_cards)))
+            return
+        s_card = s_cards[0]
         for card in client.user.deck.cards:
             if card == s_card.id:
                 client.user.deck.cards[card] -= num_cards
                 if client.user.deck.cards[card] < 1:
                     client.user.deck.cards.pop(card, None)
                 db.session.commit()
-                client.msg_self("\nRemoved {} x '{}' from '{}'.".format(num_cards, card_name, client.user.deck.name))
+                client.msg_self("\nRemoved {} x '{}' from '{}'.".format(num_cards, s_card.name, client.user.deck.name))
                 return
 
     verbs = {

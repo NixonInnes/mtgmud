@@ -54,6 +54,27 @@ def body_2cols_40(stringA, stringB):
     buff = "\n|| {:^14} || {:^14} ||".format(stringA, stringB)
     return buff
 
+def card(card):
+    buff = "\n****************************************"
+    buff +="\n* {:<29} {:>6} *".format(card.name, str(card.manaCost) if card.manaCost is not None else "")
+    buff +="\n****************************************"
+    buff +="\n* {:<36} *".format(card.type)
+    buff +="\n****************************************"
+    buff += "\n*                                      *"
+    if card.text is not None:
+        textbox = wrap(card.text, width=36)
+        for line in textbox:
+            buff += "\n* {:<36} *".format(line)
+    if card.power is not None:
+        buff += "\n*                              {:^3}/{:^3} *".format(str(card.power), str(card.toughness))
+    elif card.loyalty is not None:
+        buff += "\n*                                   {:^3} *".format(str(card.loyalty))
+    else:
+        buff += "\n*                                      *"
+    buff += "\n****************************************"
+    return buff
+
+
 def room_name(name):
     buff = "\n.-~~~~~~~~~~~~~~~~~~~~~~~~~~{{ {:^20} }}~~~~~~~~~~~~~~~~~~~~~~~~~~-.".format(name)
     return buff
@@ -70,7 +91,7 @@ def room_occupants(occs):
     occs = ', '.join(occs)
     occs = wrap(occs, width=76)
     for line in occs:
-        buff += "## {:<74} ##".format(line)
+        buff += "## {:<72} ##".format(line)
     return buff
 
 def table_header(name):
