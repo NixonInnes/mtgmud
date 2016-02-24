@@ -1,13 +1,50 @@
 import os
-from random import shuffle, randint
+from random import randint
 
-import mud
-import db, models
-import funcs
-import channels
-import style
+from app import db, server, style
+from . import channels
 
 #TODO: Tidy up the logic of these functions to be more consistent
+
+def do_login(client, args):
+    if len(args) == 0:
+        client.msg_self("\nLogin error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>")
+        client.get_prompt()
+        return
+
+    if args[0] == 'register':
+        if len(args) == 4 and args[2] == args[3]:
+            if len(args[1]) > 20:
+                client.msg_self("\nUsername is too long (max. 20).")
+                client.get_prompt()
+                return
+
+            if db.session.query(db.models.User).filter_by(name=args[1]).first() is not None:
+                client.msg_self("\nUsername \"{}\" is already taken, sorry.\n".format(args[1]))
+                client.get_prompt()
+                return
+
+            new_user = db.models.User(name=args[1], password=args[2])
+            db.session.add(new_user)
+            db.session.commit()
+            client.user = new_user
+            client.user.room = server.get_lobby()
+            do_look(client, '')
+            client.get_prompt()
+            return
+
+    if len(args) == 2:
+        dbuser = db.session.query(db.models.User).filter_by(name=args[0]).first()
+        if dbuser is not None:
+            if dbuser.verify_password(args[1]):
+                client.user = dbuser
+                client.user.room = server.get_lobby()
+                do_look(client, '')
+                client.get_prompt()
+                return
+
+    client.msg_self("\nLogin error.\nLogin: <username> <password>\nNew Account: register <username> <password> <password>")
+    client.get_prompt()
 
 def do_quit(client, args):
     """
@@ -30,7 +67,7 @@ def do_look(client, args):
     :return: None
     """
     if client.user.room is None:
-        client.msg_self("\nUmm, something's gone terribly, terribly wrong!")
+        client.msg_self("\nUmm... something's gone terribly, terribly wrong!")
         return
     buff = style.room_name(client.user.room.name)
     if client.user.room.description:
@@ -55,9 +92,9 @@ def do_who(client, args):
     buff = style.header_80("ONLINE USERS")
     buff += style.body_2cols_80('USERS', 'ROOM')
     buff += style.ROW_LINE_80
-    for c in mud.clients:
+    for c in server.clients:
         buff += style.body_2cols_80(c.user.name, c.user.room.name)
-    buff += style.body_80("Online: {:^3}".format(len(mud.clients)), align='left')
+    buff += style.body_80("Online: {:^3}".format(len(server.clients)), align='left')
     buff += style.FOOTER_80
     client.msg_self(buff)
 
@@ -96,7 +133,7 @@ def do_dice(client, args):
     if client.user.table is None or not str(args[0]).isdigit():
         do_help(client, ['dice'])
         return
-    channels.do_action(client, "rolled a {} on a {} sided dice.".format(randint(1,args[0]), args[0]), "rolled a {} on a {} sided dice.".format(randint(1,args[0]), args[0]))
+    channels.do_action(client, "rolled a {} on a {} sided dice.".format(randint(1, args[0]), args[0]), "rolled a {} on a {} sided dice.".format(randint(1, args[0]), args[0]))
 
 
 def do_card(client, args):
@@ -109,7 +146,7 @@ def do_card(client, args):
     """
     def find(args):
         card_name = ' '.join(args)
-        card = db.session.query(db.Card).filter_by(name=card_name).first()
+        card = db.session.query(db.models.Card).filter_by(name=card_name).first()
         if card is None:
             client.msg_self("\nCould not find card: {}".format(card_name))
             return
@@ -140,7 +177,7 @@ def do_rooms(client, args):
     buff = style.header_80('ROOMS')
     buff += style.body_2cols_80('ROOM', 'USERS')
     buff += style.ROW_LINE_2COL_80
-    for room in db.session.query(db.Room).all():
+    for room in db.session.query(db.models.Room).all():
         buff += style.body_2cols_80(room.name, ', '.join(user.name for user in room.occupants))
     buff += style.BLANK_80
     buff += style.FOOTER_80
@@ -153,10 +190,10 @@ def do_room(client, args):
             do_help(client, ['room'])
             return
         room_name = ' '.join(args)
-        if db.session.query(db.Room).filter_by(name=room_name).first() is not None:
+        if db.session.query(db.models.Room).filter_by(name=room_name).first() is not None:
             client.msg_self("\nThe room name '{}' is already taken, sorry.".format(room_name))
             return
-        room = db.Room(name=str(room_name))
+        room = db.models.Room(name=str(room_name))
         db.session.add(room)
         db.session.commit()
         client.msg_self("\nRoom created: {}".format(room_name))
@@ -166,8 +203,9 @@ def do_room(client, args):
             do_help(client, ['room'])
             return
         room_name = ' '.join(args)
-        room = funcs.get_room(room_name)
+        room = db.session.query(db.models.Room).filter_by(name=room_name).first()
         if room is not None:
+            server.rooms.remove(room)
             db.session.delete(room)
             db.session.commit()
             client.msg_self("\nRoom '{}' has been deleted.".format(room.name))
@@ -191,7 +229,7 @@ def do_goto(client, args):
         do_help(client, ['goto'])
     else:
         room_name = ' '.join(args)
-        room = db.session.query(db.Room).filter_by(name=room_name).first()
+        room = db.session.query(db.models.Room).filter_by(name=room_name).first()
         if room is not None:
             if client.user.room is not None:
                 client.user.room.occupants.remove(client.user)
@@ -209,9 +247,9 @@ def do_deck(client, args):
             num_cards = 0
             for card in client.user.deck.cards:
                 num_cards += client.user.deck.cards[card]
-                s_card = db.session.query(db.Card).get(card)
+                s_card = db.session.query(db.models.Card).get(card)
                 buff += style.body_40("{:^3} x {:<25}".format(client.user.deck.cards[card], s_card.name))
-            buff += style.body_40(" [{}]".format(num_cards,''), align='left')
+            buff += style.body_40(" [{}]".format(num_cards, ''), align='left')
             buff += style.FOOTER_40
             client.msg_self(buff)
             return
@@ -225,7 +263,7 @@ def do_deck(client, args):
                 if d.name == deck_name:
                     client.msg_self("\nYou already have a deck named '{}'.".format(deck_name))
                     return
-            new_deck = db.Deck(
+            new_deck = db.models.Deck(
                 name = deck_name,
                 user_id = client.user.id,
                 cards = {}
@@ -266,7 +304,7 @@ def do_deck(client, args):
         else:
             num_cards = 1
         card_name = ' '.join(args)
-        s_card = db.session.query(db.Card).filter_by(name=card_name).first()
+        s_card = db.session.query(db.models.Card).filter_by(name=card_name).first()
         if s_card is None:
             client.msg_self("\nCard '{}' not found.".format(card_name))
             return
@@ -296,7 +334,7 @@ def do_deck(client, args):
         else:
             num_cards = 1
         card_name = ' '.join(args)
-        s_card = db.session.query(db.Card).filter_by(name=card_name).first()
+        s_card = db.session.query(db.models.Card).filter_by(name=card_name).first()
 
         if s_card is None:
             client.msg_self("\nCard '{}' not found.".format(card_name))
@@ -344,8 +382,8 @@ def do_table(client, args):
             do_help(client, ['table'])
             return
         table_name = ' '.join(args)
-        table_ = models.Table(client.user, table_name)
-        mud.tables.append(table_)
+        table_ = db.models.Table(client.user, table_name)
+        server.tables.append(table_)
         client.user.room.tables.append(table_)
         do_table(client, ['join', table_name])
 
@@ -423,6 +461,7 @@ def do_table(client, args):
         do_help(client, ['table'])
 
 actions = {
+    'login': do_login,
     'quit':  do_quit,
     'look':  do_look,
     'who':   do_who,

@@ -1,22 +1,17 @@
-import os
 from passlib.hash import pbkdf2_sha256
-from sqlalchemy import create_engine, Column, Integer, String, PickleType, ForeignKey
-from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.ext.mutable import Mutable, MutableDict
+from sqlalchemy import Column, Integer, String, PickleType, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import relationship
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-import models
+from app import config
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-
-DATABASE = os.environ.get('DATABASE') or 'sqlite:///' + os.path.join(basedir, 'database.sqlite')
-
-engine = create_engine(DATABASE)
+engine = create_engine(config.DATABASE)
 Session = sessionmaker(bind=engine)
 session = Session()
-
 Base = declarative_base()
-
 
 def generate_password_hash(password):
     return pbkdf2_sha256.encrypt(password, rounds=150000, salt_size=15)
@@ -60,10 +55,6 @@ class Room(Base):
     name = Column(String)
     description = Column(String)
     occupants = relationship('User', back_populates='room')
-
-    def __init__(self, **kwargs):
-        super(Room, self).__init__(**kwargs)
-        self.tables = []
 
     def __repr__(self):
         return "<Room(name='{}', description='{}')>".format(self.name, self.description)
@@ -111,12 +102,8 @@ class Deck(Base):
         return num
 
     def get(self):
-        buff = []
-        for card in self.cards:
-            s_card = session.query(Card).get(card)
-            for c in range(self.cards[card]):
-                buff.append(models.Card(s_card))
-        return buff
+        # This needs rethinking
+        return ""
 
     def show(self):
         buff = "\nDeck: {}".format(self.name)

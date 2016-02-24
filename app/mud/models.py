@@ -1,6 +1,31 @@
 from itertools import zip_longest
 from random import shuffle
-import style
+
+from app import db, style
+
+
+class Room(object):
+    def __init__(self):
+        self.name = None
+        self.description = None
+        self.db = None
+
+        self.occupants = []
+        self.tables = []
+
+    @staticmethod
+    def load(db_room):
+        room = Room()
+        room.name = db_room.name
+        room.description = db_room.description
+        room.db = db_room
+        return room
+
+    def save(self):
+        self.db.room.name = self.name
+        self.db.description = self.description
+        db.session.commit()
+
 
 class Table(object):
     def __init__(self, user, name):
@@ -51,23 +76,41 @@ class Table(object):
 
 class Card(object):
     def __init__(self, card):
-        self.name = card.name
-        self.names = card.names
-        self.manaCost = card.manaCost
-        self.cmc = card.cmc
-        self.colors = card.colors
-        self.type = card.type
-        self.supertypes = card.supertypes
-        self.types = card.types
-        self.subtypes = card.subtypes
-        self.rarity = card.rarity
-        self.text = card.text
-        self.power = card.power
-        self.toughness = card.toughness
-        self.loyalty = card.loyalty
+        self.name = None
+        self.names = None
+        self.manaCost = None
+        self.cmc = None
+        self.colors = None
+        self.type = None
+        self.supertypes = None
+        self.types = None
+        self.subtypes = None
+        self.rarity = None
+        self.text = None
+        self.power = None
+        self.toughness = None
+        self.loyalty = None
 
         self.tapped = False
         self.counters = 0
+
+    @staticmethod
+    def load(db_card):
+        card = Card()
+        card.name = db_card.name
+        card.names = db_card.names
+        card.manaCost = db_card.manaCost
+        card.cmc = db_card.cmc
+        card.colors = db_card.colors
+        card.type = db_card.type
+        card.supertypes = db_card.supertypes
+        card.types = db_card.types
+        card.subtypes = db_card.subtypes
+        card.rarity = db_card.rarity
+        card.text = db_card.text
+        card.power = db_card.power
+        card.toughness = db_card.toughness
+        card.loyalty = db_card.loyalty
 
 
 class Pile(list):
