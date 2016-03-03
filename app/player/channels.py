@@ -2,9 +2,9 @@ from app import server
 
 # Non-User channels
 def do_action(client, msg_self, msg_others):
-    for c in client.user.table.clients:
-        if c is client:
-            client.msg_client(c, "\n[ACT] You {}".format(msg_self))
+    for user in client.user.table.occupants:
+        if user is client.user:
+            client.msg_client(client, "\n[ACT] You {}".format(msg_self))
         else:
             client.msg_client(c, "\n[ACT] {} {}".format(client.user.name, msg_others))
 

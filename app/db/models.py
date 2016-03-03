@@ -29,9 +29,7 @@ class User(Base):
     decks = relationship('Deck')
     deck = relationship('Deck', uselist=False, back_populates='user')
     _password = Column(String)
-    room_id = Column(Integer, ForeignKey('rooms.id'))
-    room = relationship('Room', back_populates='occupants')
-    table = None
+
 
     @property
     def password(self):
@@ -54,7 +52,6 @@ class Room(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
-    occupants = relationship('User', back_populates='room')
 
     def __repr__(self):
         return "<Room(name='{}', description='{}')>".format(self.name, self.description)

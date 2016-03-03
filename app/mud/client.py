@@ -58,7 +58,9 @@ class Client(Protocol):
     def connection_lost(self, ex):
         print("Disconnected: {}".format(self.addr))
         server.clients.remove(self)
-        if self.user.room:
+
+        if self.user:
             self.user.room.occupants.remove(self.user)
+            server.users.remove(self.user)
 
 

@@ -24,22 +24,20 @@ def do_login(client, args):
                 client.get_prompt()
                 return
 
-            new_user = db.models.User(name=args[1], password=args[2])
-            db.session.add(new_user)
+            dbUser = db.models.User(name=args[1], password=args[2])
+            db.session.add(dbUser)
             db.session.commit()
-            client.user = new_user
-            client.user.room = server.get_lobby()
-            do_look(client, '')
+            server.load_user(client, dbUser)
+            do_look(client, None)
             client.get_prompt()
             return
 
     if len(args) == 2:
-        dbuser = db.session.query(db.models.User).filter_by(name=args[0]).first()
-        if dbuser is not None:
-            if dbuser.verify_password(args[1]):
-                client.user = dbuser
-                client.user.room = server.get_lobby()
-                do_look(client, '')
+        dbUser = db.session.query(db.models.User).filter_by(name=args[0]).first()
+        if dbUser is not None:
+            if dbUser.verify_password(args[1]):
+                server.load_user(client, dbUser)
+                do_look(client, None)
                 client.get_prompt()
                 return
 
@@ -173,7 +171,7 @@ def do_rooms(client, args):
     buff = style.header_80('ROOMS')
     buff += style.body_2cols_80('ROOM', 'USERS')
     buff += style.ROW_LINE_2COL_80
-    for room in db.session.query(db.models.Room).all():
+    for room in server.rooms:
         buff += style.body_2cols_80(room.name, ', '.join(user.name for user in room.occupants))
     buff += style.BLANK_80
     buff += style.FOOTER_80
@@ -186,12 +184,13 @@ def do_room(client, args):
             do_help(client, ['room'])
             return
         room_name = ' '.join(args)
+        # Check the database for duplicate name, rather than the server.rooms list, as we may not want to load rooms for some reason later
         if db.session.query(db.models.Room).filter_by(name=room_name).first() is not None:
             client.msg_self("\nThe room name '{}' is already taken, sorry.".format(room_name))
             return
         room = db.models.Room(name=str(room_name))
         vroom = mud.models.Room.load(room)
-        server.rooms.append(vroom)
+        mud.rooms.append(vroom)
         db.session.add(room)
         db.session.commit()
         client.msg_self("\nRoom created: {}".format(room_name))
@@ -232,12 +231,12 @@ def do_goto(client, args):
         do_help(client, ['goto'])
     else:
         room_name = ' '.join(args)
-        room = db.session.query(db.models.Room).filter_by(name=room_name).first()
+        room = server.get_room(room_name)
         if room is not None:
             if client.user.room is not None:
                 client.user.room.occupants.remove(client.user)
             client.user.room = room
-            db.session.commit()
+            client.user.room.occupants.append(client.user)
             do_look(client, None)
             return
         client.msg_self("\nGoto where?!")
@@ -268,7 +267,7 @@ def do_deck(client, args):
                     return
             new_deck = db.models.Deck(
                 name = deck_name,
-                user_id = client.user.id,
+                user_id = client.user.db.id,
                 cards = {}
             )
             db.session.add(new_deck)
@@ -282,10 +281,9 @@ def do_deck(client, args):
             do_help(client, ['deck'])
         else:
             deck_name = ' '.join(args)
-            for d in client.user.decks:
-                if d.name == deck_name:
-                    client.user.deck_id = d.id
-                    client.user.deck = d
+            for deck in client.user.decks:
+                if deck.name == deck_name:
+                    client.user.deck = deck
                     db.session.add(client.user)
                     db.session.commit()
                     print(client.user.deck)
@@ -392,7 +390,7 @@ def do_table(client, args):
             do_help(client, ['table'])
             return
         table_name = ' '.join(args)
-        table_ = db.models.Table(client.user, table_name)
+        table_ = mud.models.Table(client.user, table_name)
         server.tables.append(table_)
         client.user.room.tables.append(table_)
         do_table(client, ['join', table_name])
@@ -404,7 +402,7 @@ def do_table(client, args):
         table_name = ' '.join(args)
         for t in client.user.room.tables:
             if table_name == t.name:
-                if len(t.clients) < 2 or client.user in t.users:
+                if len(t.users) < 2 or client.user in t.users:
                     t.add_player(client.user)
                     client.user.table = t
                     channels.do_action(client, "joined table {}.".format(t.name), "joined the table.")
@@ -438,15 +436,16 @@ def do_table(client, args):
         client.msg_self(buff)
 
     def play(args):
+        table = client.user.table
         if args is None or not str(args[0]).isdigit():
             do_help(client ['table', 'play'])
             return
-        if not client.user.table.hands[client][int(args[0])]:
+        if not table.hands[client][int(args[0])]:
             do_help(client ['table', 'play'])
             return
-        client.user.table.battlefields[client].append(client.user.table.hands[client][int(args[0])])
-        channels.do_action(client, "play {}.".format(client.user.table.hands[client][int(args[0])].name), "plays {}.".format(client.user.table.hands[client][int(args[0])].name))
-        client.user.table.hands[client].pop(int(args[0]))
+        table.battlefields[client].append(table.hands[client][int(args[0])])
+        channels.do_action(client, "play {}.".format(table.hands[client][int(args[0])].name), "plays {}.".format(table.hands[client][int(args[0])].name))
+        table.hands[client].pop(int(args[0]))
 
     verbs = {
         'create': create,

@@ -8,11 +8,12 @@ from . import models as v_models
 class Mud(object):
     def __init__(self):
         self.clients = []
+        self.users = []
         self.rooms = []
         self.tables = []
 
         print("Checking Room database...")
-        if self.get_lobby() is None:
+        if db.session.query(db_models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first() is None:
             print("No lobby found, creating...")
             lobby = db_models.Room(
                 name=config.LOBBY_ROOM_NAME,
@@ -36,16 +37,26 @@ class Mud(object):
         else:
             print("Cards exist.")
 
-    def get_lobby(self):
-        return db.session.query(db.models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first()
+    def get_room(self, room_name):
+        for room in self.rooms:
+            if room.name == room_name:
+                return room
+        return None
 
-    def load_user(self, client, user):
+    def get_lobby(self):
+        for room in self.rooms:
+            if room.name == config.LOBBY_ROOM_NAME:
+                return room
+        return None
+
+    def load_user(self, client, dbUser):
+        user = v_models.User.load(dbUser)
         for c in self.clients:
             if c.user == user:
                 client.msg_client(c, "\nYou have signed in from another location!")
                 client.connection_lost(client)
-
         client.user = user
+        self.users.append(client.user)
         client.user.room = self.get_lobby()
 
     def get_client(self, user):

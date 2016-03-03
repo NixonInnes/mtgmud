@@ -1,0 +1,15 @@
+* Refactor all references from client.user to user
+
+* Add a user.id (same used in user.db.id)
+
+* Add a mud.models.USER_FLAGS global list
+
+* Add user.flags
+
+* Add function to watch other connected users
+    - Add check in user.msg_user to see if there are users in their user.spectator list, and send to that user too
+
+* Add user flag, ALLOW_SPECTATORS
+
+* Add user list of allowed spectators (user.id) { if user.id in u.spectators }
+    - Will need to be saved to the db
