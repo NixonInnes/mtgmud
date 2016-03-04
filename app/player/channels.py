@@ -1,47 +1,46 @@
 from app import server
 
 # Non-User channels
-def do_action(client, msg_self, msg_others):
-    for user in client.user.table.occupants:
-        if user is client.user:
-            client.msg_client(client, "\n[ACT] You {}".format(msg_self))
+def do_action(user, msg_self, msg_others):
+    for u in user.table.users:
+        if u is user:
+            user.msg_user(user, "\n[ACT] You {}".format(msg_self))
         else:
-            client.msg_client(c, "\n[ACT] {} {}".format(client.user.name, msg_others))
+            user.msg_user(u, "\n[ACT] {} {}".format(user.user.name, msg_others))
 
 # User channels
-def do_chat(client, msg):
-    for c in server.clients:
-        if c.user is not None:
-            if c is client:
-                client.msg_client(c, "\n[chat] You: {}".format(msg))
+def do_chat(user, msg):
+    for u in server.users:
+        if u.authd:
+            if u is user:
+                user.msg_self("\n[chat] You: {}".format(msg))
             else:
-                client.msg_client(c, "\n[chat] {}: {}".format(client.user.name, msg))
+                user.msg_user(u, "\n[chat] {}: {}".format(user.name, msg))
 
-def do_say(client, msg):
-    for user in client.user.room.occupants:
-        c = server.get_client(user)
-        if c is client:
-            client.msg_client(c, "\n[say] You: {}".format(msg))
+def do_say(user, msg):
+    for u in user.room.occupants:
+        if u is user:
+            user.msg_self("\n[say] You: {}".format(msg))
         else:
-            client.msg_client(c, "\n[say] {}: {}".format(client.user.name, msg))
+            user.msg_user(u, "\n[say] {}: {}".format(user.name, msg))
 
-def do_tchat(client, msg):
-    for c in client.user.table.clients:
-        if c is client:
-            client.msg_client(c, "\n[table] You: {}".format(msg))
+def do_tchat(user, msg):
+    for u in user.table.users:
+        if u is user:
+            user.msg_self("\n[table] You: {}".format(msg))
         else:
-            client.msg_client(c, "\n[table] {} : {}".format(client.user.name, msg))
+            user.msg_user(u, "\n[table] {} : {}".format(user.name, msg))
 
-def do_whisper(client, msg):
+def do_whisper(user, msg):
     args = msg.split()
     recip = args[0]
     msg = ' '.join(args[1:])
-    recip = server.get_client(recip)
+    recip = server.get_user(recip)
     if recip is None:
-        client.msg_self("\nCould not find user {}.".format(args[0]))
+        user.msg_self("\nCould not find user {}.".format(args[0]))
         return
-    client.msg_client(client, "\n[whisper] You: {}".format(msg))
-    client.msg_client(recip, "\n[whisper] {}: {}".format(client.user.name, msg))
+    user.msg_user(user, "\n[whisper] You: {}".format(msg))
+    user.msg_user(recip, "\n[whisper] {}: {}".format(user.name, msg))
 
 
 channels = {

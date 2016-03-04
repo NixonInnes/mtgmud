@@ -1,16 +1,34 @@
-import requests
+import requests, threading, time
 
 from app import db, config
 from app.db import models as db_models
 from . import models as v_models
 
+# specify a function to be executed with specified params every n seconds.
+class PeriodicExecutor(threading.Thread):
+    def __init__(self,sleep,func):
+        """ execute func(params) every 'sleep' seconds """
+        self.func = func
+        self.sleep = sleep
+        threading.Thread.__init__(self,name = "PeriodicExecutor")
+        self.setDaemon(True)
+    def run(self):
+        while 1:
+            time.sleep(self.sleep)
+            self.func()
+
 
 class Mud(object):
     def __init__(self):
-        self.clients = []
+        self.connected = []
         self.users = []
         self.rooms = []
         self.tables = []
+        # A tick is a list of (function, params, interval)
+        self.ticks = []
+        self.ticker = 0
+        self.tick = PeriodicExecutor(1, self.do_tick)
+
 
         print("Checking Room database...")
         if db.session.query(db_models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first() is None:
@@ -37,6 +55,13 @@ class Mud(object):
         else:
             print("Cards exist.")
 
+    def do_tick(self):
+        for tick in self.ticks:
+            func, params, interval = tick
+            if self.ticker % interval is 0:
+                func(params)
+        self.ticker += 1
+
     def get_room(self, room_name):
         for room in self.rooms:
             if room.name == room_name:
@@ -49,21 +74,21 @@ class Mud(object):
                 return room
         return None
 
-    def load_user(self, client, dbUser):
-        user = v_models.User.load(dbUser)
-        for c in self.clients:
-            if c.user == user:
-                client.msg_client(c, "\nYou have signed in from another location!")
-                client.connection_lost(client)
-        client.user = user
-        self.users.append(client.user)
-        client.user.room = self.get_lobby()
+    # def load_user(self, client, dbUser):
+    #     user = v_models.User.load(dbUser)
+    #     for c in self.clients:
+    #         if c.user == user:
+    #             client.msg_client(c, "\nYou have signed in from another location!")
+    #             client.connection_lost(client)
+    #     client.user = user
+    #     self.users.append(client.user)
+    #     client.user.room = self.get_lobby()
 
-    def get_client(self, user):
-        for client in self.clients:
-            if client.user == user:
-                return client
-        return None
+    # def get_client(self, user):
+    #     for client in self.clients:
+    #         if client.user == user:
+    #             return client
+    #     return None
 
     @staticmethod
     def update_cards():

@@ -10,12 +10,12 @@ if os.path.exists('.env'):
 
 import asyncio
 from app import config
-from app.mud.client import Client
+from app.mud.user import User
 
 def main():
         print("Server starting up...")
         loop = asyncio.get_event_loop()
-        coroutine = loop.create_server(Client, host=config.HOST, port=config.PORT)
+        coroutine = loop.create_server(User, host=config.HOST, port=config.PORT)
         server = loop.run_until_complete(coroutine)
 
         print("Server now listening on {}".format(server.sockets[0].getsockname()))
