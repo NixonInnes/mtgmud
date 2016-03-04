@@ -1,6 +1,8 @@
 * Refactor all references from client.user to user
+     - Think this is mostly done now; will leave this here until i'm 100%
 
 * Add a user.id (same used in user.db.id)
+    - Nah, I think I'll stick with user.db.id... i think
 
 * Add a mud.models.USER_FLAGS global list
 
