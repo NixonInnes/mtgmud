@@ -4,6 +4,8 @@
 * Add a user.id (same used in user.db.id)
     - Nah, I think I'll stick with user.db.id... i think
 
+* Add user aliases, because typing out commands in full is for suckers
+
 * Add a mud.models.USER_FLAGS global list
 
 * Add user.flags
