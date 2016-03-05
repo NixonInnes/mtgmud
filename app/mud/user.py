@@ -87,8 +87,8 @@ class User(Protocol):
     def connection_lost(self, ex):
         print("Disconnected: {}".format(self.addr))
         server.connected.remove(self)
-        server.users.remove(self)
-
+        
         if self.authd:
             self.save()
+            server.users.remove(self)
             self.user.room.occupants.remove(self.user)

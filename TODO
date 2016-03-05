@@ -1,6 +1,19 @@
 * Refactor all references from client.user to user
+    - Think this is mostly done now; will leave this here until i'm 100%
 
 * Add a user.id (same used in user.db.id)
+    - Nah, I think I'll stick with user.db.id... i think
+
+* Check the ticker works
+    - Add function to save rooms and users periodically
+
+* Add some code so when a user just hits return it either:
+    - if they're not at a table, does do_look
+    - if they're at a table, it shows the table
+
+* Add user.listening, and ignored lists, so users can mute channels/players
+
+* Add user aliases, because typing out commands in full is for suckers
 
 * Add a mud.models.USER_FLAGS global list
 
