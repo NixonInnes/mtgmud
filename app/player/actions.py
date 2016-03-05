@@ -413,7 +413,12 @@ def do_table(user, args):
         if user.table is None or user.deck is None:
             do_help(user, ['table', 'stack'])
             return
-        user.table.stack_library(user, user.deck.get())
+        card_list = []
+        for card in user.deck.cards:
+            dbCard = db.session.query(db.models.Card).get(card)
+            for i in range(card):
+                card_list.append(mud.models.Card.load(dbCard))
+        user.table.stack_library(user, card_list)
         user.table.shuffle_library(user)
         channels.do_action(user, "stacked your library.", "stacked their library.")
 

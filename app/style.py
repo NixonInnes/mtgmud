@@ -95,7 +95,7 @@ def room_occupants(occs):
     return buff
 
 def table_header(name):
-    buff = "\n============================[[ {:^20} ]]============================".format(name)
+    buff = "\n===========================[[ {:^20} ]]===========================".format(name)
     return buff
 
 def table_user(name):

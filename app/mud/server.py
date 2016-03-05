@@ -7,7 +7,7 @@ from . import models as v_models
 # specify a function to be executed with specified params every n seconds.
 class PeriodicExecutor(threading.Thread):
     def __init__(self,sleep,func):
-        """ execute func(params) every 'sleep' seconds """
+        """ execute func() every 'sleep' seconds """
         self.func = func
         self.sleep = sleep
         threading.Thread.__init__(self,name = "PeriodicExecutor")
@@ -28,6 +28,8 @@ class Mud(object):
         self.ticks = []
         self.ticker = 0
         self.tick = PeriodicExecutor(1, self.do_tick)
+        self.tick.start()
+        self.ticks.append((self.test_tick,60))
 
 
         print("Checking Room database...")
@@ -57,9 +59,9 @@ class Mud(object):
 
     def do_tick(self):
         for tick in self.ticks:
-            func, params, interval = tick
+            func, interval = tick
             if self.ticker % interval is 0:
-                func(params)
+                func()
         self.ticker += 1
 
     def get_room(self, room_name):
@@ -74,21 +76,9 @@ class Mud(object):
                 return room
         return None
 
-    # def load_user(self, client, dbUser):
-    #     user = v_models.User.load(dbUser)
-    #     for c in self.clients:
-    #         if c.user == user:
-    #             client.msg_client(c, "\nYou have signed in from another location!")
-    #             client.connection_lost(client)
-    #     client.user = user
-    #     self.users.append(client.user)
-    #     client.user.room = self.get_lobby()
-
-    # def get_client(self, user):
-    #     for client in self.clients:
-    #         if client.user == user:
-    #             return client
-    #     return None
+    def test_tick(self):
+        for user in self.users:
+            user.msg_self("\n[ANNOUNCEMENT] This is a test")
 
     @staticmethod
     def update_cards():

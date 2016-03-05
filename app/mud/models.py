@@ -75,7 +75,7 @@ class Table(object):
 
 
 class Card(object):
-    def __init__(self, card):
+    def __init__(self):
         self.name = None
         self.names = None
         self.manaCost = None
@@ -111,6 +111,7 @@ class Card(object):
         card.power = db_card.power
         card.toughness = db_card.toughness
         card.loyalty = db_card.loyalty
+        return card
 
 
 class Pile(list):

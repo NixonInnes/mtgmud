@@ -102,10 +102,6 @@ class Deck(Base):
             num += self.cards[card]
         return num
 
-    def get(self):
-        # This needs rethinking
-        return ""
-
     def show(self):
         buff = "\nDeck: {}".format(self.name)
         for card in self.cards:
