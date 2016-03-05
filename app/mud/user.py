@@ -1,7 +1,7 @@
 from asyncio import Protocol
 
+from .colour import colourify
 from app import db, server
-
 from app.player import actions, channels
 
 class User(Protocol):
@@ -21,7 +21,7 @@ class User(Protocol):
         server.connected.append(self)
 
         #TODO: Add a welcome function
-        self.msg_self("\n########## Welcome to MtGMUD!! ##########\n\nLogin: <username> <password>\nRegister: register <username> <password> <password>")
+        self.msg_self("\n$b#$r#$g#$y#$u#$m#$c#$w#$x## Welcome to MtGMUD!! ##########\n\nLogin: <username> <password>\nRegister: register <username> <password> <password>")
         self.get_prompt()
 
     def data_received(self, data):
@@ -57,10 +57,11 @@ class User(Protocol):
         self.transport.write(buff.encode())
 
     def msg_self(self, msg):
-        self.transport.write(msg.encode())
+        self.msg_user(self, msg)
 
     @staticmethod
     def msg_user(user, msg):
+        msg = colourify(msg)
         user.transport.write(msg.encode())
 
     def load(self, dbUser):

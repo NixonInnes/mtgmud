@@ -268,7 +268,7 @@ def do_deck(user, args):
             new_deck = db.models.Deck(
                 name = deck_name,
                 user_id = user.db.id,
-                cards = {}
+                cards = {'total': 0}
             )
             db.session.add(new_deck)
             user.decks.append(new_deck)
@@ -306,22 +306,21 @@ def do_deck(user, args):
             num_cards = 1
         card_name = ' '.join(args)
         s_cards = db.models.Card.search(card_name)
-        if len(s_cards) == 0:
+        if len(s_cards) is 0:
             user.msg_self("\nCard '{}' not found.".format(card_name))
             return
         if len(s_cards) > 1:
             user.msg_self("\nMultiple cards called {}: {}\nPlease be more specific.".format(card_name, ', '.join(card.name for card in s_cards)))
             return
         s_card = s_cards[0]
-        card_count = 0
-        for card in user.deck.cards:
-            card_count += int(user.deck.cards[card])
-        if card_count >= 600:
-            user.msg_self("\nYour deck is at the card limit ({}).".format(card_count))
+
+        if user.deck.cards['total'] >= 600:
+            user.msg_self("\nYour deck is at the card limit ({}).".format(user.deck.cards['total']))
         if s_card.id in user.deck.cards:
             user.deck.cards[s_card.id] += num_cards
         else:
             user.deck.cards[s_card.id] = num_cards
+        user.deck.cards['total'] += 1
         db.session.commit()
         user.msg_self("\nAdded {} x '{}' to '{}'.".format(num_cards, s_card.name, user.deck.name))
 
@@ -340,7 +339,7 @@ def do_deck(user, args):
             num_cards = 1
         card_name = ' '.join(args)
         s_cards = db.models.Card.search(card_name)
-        if len(s_cards) == 0:
+        if len(s_cards) is 0:
             user.msg_self("\nCard '{}' not found.".format(card_name))
             return
         if len(s_cards) > 1:
@@ -352,6 +351,7 @@ def do_deck(user, args):
                 user.deck.cards[card] -= num_cards
                 if user.deck.cards[card] < 1:
                     user.deck.cards.pop(card, None)
+                user.deck.cards['total'] -= 1
                 db.session.commit()
                 user.msg_self("\nRemoved {} x '{}' from '{}'.".format(num_cards, s_card.name, user.deck.name))
                 return
@@ -403,42 +403,37 @@ def do_table(user, args):
         for t in user.room.tables:
             if table_name == t.name:
                 if len(t.users) < 2 or user in t.users:
-                    t.add_player(user)
+                    t.join(user)
                     user.table = t
                     channels.do_action(user, "joined table {}.".format(t.name), "joined the table.")
                     return
         user.msg_self("\nCould not find table '{}".format(table_name))
 
+    def leave(args):
+        user.table.leave(user)
+        channels.do_action(user, "left the table.", "left the table.")
+
     def stack(args):
         if user.table is None or user.deck is None:
             do_help(user, ['table', 'stack'])
             return
-        card_list = []
-        for card in user.deck.cards:
-            dbCard = db.session.query(db.models.Card).get(card)
-            for i in range(card):
-                card_list.append(mud.models.Card.load(dbCard))
-        user.table.stack_library(user, card_list)
-        user.table.shuffle_library(user)
+        user.table.stack(user)
+        user.table.shuffle(user)
         channels.do_action(user, "stacked your library.", "stacked their library.")
 
     def draw(args):
         if args is None:
-            user.table.draw_card(user)
+            user.table.draw(user)
             channels.do_action(user, "draw a card.", "draws a card.")
             return
         if not str(args[0]).isdigit():
             do_help(user, ['table', 'draw'])
             return
-        user.table.draw_card(user, args[0])
+        user.table.draw(user, args[0])
         channels.do_action(user, "draw {} cards.".format(args[0]), "draws {} cards.".format(user.name, args[0]))
 
     def hand(args):
-        buff = style.header_40("Hand")
-        for card in user.table.hands[user]:
-            buff += style.body_40("({:2}) {:<25}".format(user.table.hands[user].index(card), card.name))
-        buff += style.FOOTER_40
-        user.msg_self(buff)
+        user.msg_self(user.table.hand(user))
 
     def play(args):
         table = user.table
@@ -451,6 +446,35 @@ def do_table(user, args):
         table.battlefields[user].append(table.hands[user][int(args[0])])
         channels.do_action(user, "play {}.".format(table.hands[user][int(args[0])].name), "plays {}.".format(table.hands[user][int(args[0])].name))
         table.hands[user].pop(int(args[0]))
+
+    def shuffle(args):
+        user.table.shuffle(user)
+        channels.do_action(user, "shuffled your library.", "{} shuffled their library.".format(user.name))
+
+    def tutor(args):
+        if args is None:
+            do_help(user, ['table', 'tutor'])
+            return
+        card_name = ' '.join(args)
+        if user.table.tutor(user, card_name):
+            channels.do_action(user, "tutored {} from your library.".format(card_name), "tutored {} from their library.".format(user.name, card_name))
+        else:
+            user.msg_self("\nFailed to find '{}' in your library.".format(card_name))
+
+    def destroy(args):
+        pass
+
+    def bounce(args):
+        pass
+
+    def unearth(args):
+        pass
+
+    def exile(args):
+        pass
+
+    def grexile(args):
+        pass
 
     verbs = {
         'create': create,

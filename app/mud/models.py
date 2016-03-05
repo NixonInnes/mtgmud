@@ -36,30 +36,46 @@ class Table(object):
         self.exiles = {}
         self.libraries = {}
         self.hands = {}
+        self.life_totals = {}
+        self.poison_counters = {}
         self.users = []
 
-    def add_player(self, user):
+    def join(self, user):
         self.users.append(user)
         self.battlefields[user] = []
-        self.graveyards[user] = Pile()
-        self.exiles[user] = Pile()
-        self.libraries[user] = Pile()
+        self.graveyards[user] = []
+        self.exiles[user] = []
+        self.libraries[user] = []
         self.hands[user] = []
+        self.life_totals[user] = 20
+        self.poison_counters[user] = 0
 
-    #TODO: move these functions back into actions
-    def stack_library(self, user, card_list):
-        for card in card_list:
-            self.libraries[user].append(card)
+    def leave(self, user):
+        self.hands.pop(user)
+        self.libraries.pop(user)
+        self.exiles.pop(user)
+        self.graveyards.pop(user)
+        self.battlefields.pop(user)
+        self.life_totals.pop(user)
+        self.poison_counters.pop(user)
+        self.users.pop(user)
 
-    def shuffle_library(self, user):
-        self.libraries[user].shuffle()
+    def stack(self, user):
+        for card in user.deck.cards:
+            dbCard = db.session.query(db.models.Card).get(card)
+            for i in range(card):
+                self.libraries[user].append(Card.load(dbCard))
+        self.life_totals[user] = 20
+        self.poison_counters[user] = 0
+
+    def shuffle(self, user):
+        shuffle(self.libraries[user])
 
     def draw_card(self, user, num=1):
         for i in range(int(num)):
             self.hands[user].append(self.libraries[user][0])
             self.libraries[user].pop(0)
 
-    #TODO: This needs moved into an action
     def show(self):
         buff = style.table_header(self.name)
         for user in self.battlefields:
@@ -72,6 +88,63 @@ class Table(object):
             for line in lines:
                 buff += "\n{}".format("||"+" "*20+"|" if line is None else line)
         return buff
+
+    def hand(self, user):
+        buff = style.header_40("Hand")
+        for card in self.hands[user]:
+            buff += style.body_40("({:2}) {:<25}".format(self.hands[user].index(card), card.name))
+        buff += style.FOOTER_40
+        return buff
+
+    def play(self, user, card):
+        self.battlefields[user].append(self.hands[user][card])
+        self.hands[user].remove(card)
+
+    def discard(self, user, card):
+        self.hands[user].remove(card)
+        self.graveyards[user].append(card)
+
+    def tutor(self, user, card_name):
+        for card in self.libraries[user]:
+            if card.name.lower() == card_name.lower():
+                self.hands[user].append(card)
+                self.libraries[user].remove(card)
+                return True
+        return False
+
+    def destroy(self, user, card):
+        self.battlefields[user].remove(card)
+        self.graveyards[user].append(card)
+
+    def return_(self, user, card):
+        self.battlefields[user].remove(card)
+        self.hands[user].append(card)
+
+    def greturn(self, user, card):
+        self.graveyards[user].remove(card)
+        self.hands[user].append(card)
+
+    def unearth(self, user, card):
+        self.graveyards[user].remove(card)
+        self.battlefields[user].append(card)
+
+    def exile(self, user, card):
+        self.battlefields[user].remove(card)
+        self.exiles[user].append(card)
+
+    def grexile(self, user, card):
+        self.graveyards[user].remove(card)
+        self.exiles[user].append(card)
+
+    def hexile(self, user, card):
+        self.hands[user].remove(card)
+        self.exiles[user].append(card)
+
+    def scoop(self, user):
+        self.hands[user].clear()
+        self.graveyards[user].clear()
+        self.exiles[user].clear()
+        self.libraries[user].clear()
 
 
 class Card(object):
@@ -94,6 +167,13 @@ class Card(object):
         self.tapped = False
         self.counters = 0
 
+    def tap(self):
+        self.tapped = True
+
+    def untap(self):
+        self.tapped = False
+
+    # Not done in __init__ incase we want to create cards on the fly one day... (tokens?)
     @staticmethod
     def load(db_card):
         card = Card()
@@ -112,15 +192,3 @@ class Card(object):
         card.toughness = db_card.toughness
         card.loyalty = db_card.loyalty
         return card
-
-
-class Pile(list):
-    def __init__(self):
-        super().__init__(self)
-        self.name = None
-
-    def shuffle(self):
-        shuffle(self)
-
-    def count(self):
-        return len(self)
