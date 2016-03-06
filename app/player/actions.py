@@ -445,6 +445,45 @@ def do_table(user, args):
         table.play(user, card)
         channels.do_action(user, "play {}.".format(card.name), "plays {}.".format(card.name))
 
+    def tap(args):
+        table = user.table
+        if args is None:
+            do_help(user, ['table', 'tap'])
+            return
+        if str(args[0]).isdigit():
+            card = table.battlefields[user][int(args[0])]
+            if card.tapped:
+                user.msg_self("\n{} is already tapped.".format(card.name))
+                return
+            card.tap()
+            channels.do_action(user, "tap {}.".format(card.name), "taps {}.".format(card.name))
+        elif args[0] is "all":
+            for card in table.battlefields[user]:
+                card.tap()
+            channels.do_action(user, "tap all your cards.", "taps all their cards.")
+        else:
+            do_help(user, ['table', 'tap'])
+
+    def untap(args):
+        table = user.table
+        if args is None:
+            do_help(user, ['table', 'untap'])
+            return
+        if str(args[0]).isdigit():
+            card = table.battlefields[user][int(args[0])]
+            if not card.tapped:
+                user.msg_self("\n{} is not tapped.".format(card.name))
+                return
+            card.untap()
+            channels.do_action(user, "untap {}.".format(card.name), "untaps {}.".format(card.name))
+        elif args[0] is "all":
+            for card in table.battlefields[user]:
+                card.untap()
+            channels.do_action(user, "untap all your cards.", "untaps all their cards.")
+        else:
+            do_help(user, ['table', 'tap'])
+
+
     def shuffle(args):
         user.table.shuffle(user)
         channels.do_action(user, "shuffled your library.", "shuffled their library.")
@@ -522,6 +561,8 @@ def do_table(user, args):
         'hand': hand,
         'shuffle': shuffle,
         'play': play,
+        'tap': tap,
+        'untap': untap,
         'tutor': tutor,
         'destroy': destroy,
         'return': return_,

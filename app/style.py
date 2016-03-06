@@ -104,6 +104,10 @@ def table_user(name):
     buff = "&G|&x&g++++&w {:^28} &g++++&G|&x".format(name)
     return buff
 
+def table_user_stats(life, hand, library, graveyard, poison=None):
+    buff ="&G|&x&g+++&x HP:&r{:^3}&x H:{:^3} L:{:^3} G:{:^3} {:^5} &g+++&x&G|&x".format(life, hand, library, graveyard, "P:{:^3}".format(poison) if poison is not None else "")
+    return buff
+
 def table_card(index, card):
     buff = "&G|&x ({:2}) [{:1}] {:<27} &G|&x".format(index, "T" if card.tapped else "", card.name)
     return buff

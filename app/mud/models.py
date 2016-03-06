@@ -80,7 +80,10 @@ class Table(object):
         buff = style.table_header(self.name)
         user_list = []
         for user in self.battlefields:
-            card_list = [style.table_user(user.name)]
+            card_list = [style.table_user(user.name),
+                         style.table_user_stats(self.life_totals[user], len(self.hands[user]),
+                                                len(self.libraries[user]), len(self.graveyards[user]),
+                                                self.poison_counters[user] if self.poison_counters[user] > 0 else None)]
             lands_list = []
             artifacts_list = []
             enchantments_list = []
@@ -99,12 +102,10 @@ class Table(object):
                     others_list.append(style.table_card(self.battlefields[user].index(card), card))
             card_list += lands_list+artifacts_list+enchantments_list+creatures_list+others_list
             user_list.append(card_list[:])
-        for i in range(len(user_list[0])):
-            user_list[0][i] = '\n' + user_list[0][i]
         battlefield_list = list(zip_longest(*user_list))
         for lines in battlefield_list:
-            for line in lines:
-                buff += style.table_card_blank() if line is None else line
+            for card in lines:
+                buff += "{}{}".format("\n" if card is lines[0] else "", style.table_card_blank() if card is None else card)
         return buff
 
     def hand(self, user):
