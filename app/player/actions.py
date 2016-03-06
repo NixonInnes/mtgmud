@@ -183,14 +183,14 @@ def do_room(user, args):
         if args is None:
             do_help(user, ['room'])
             return
-        room_name = ' '.join(args)
+        room_name = mud.colour.strip(' '.join(args))
         # Check the database for duplicate name, rather than the server.rooms list, as we may not want to load rooms for some reason later
         if db.session.query(db.models.Room).filter_by(name=room_name).first() is not None:
             user.msg_self("\nThe room name '{}' is already taken, sorry.".format(room_name))
             return
         room = db.models.Room(name=str(room_name))
         vroom = mud.models.Room.load(room)
-        mud.rooms.append(vroom)
+        server.rooms.append(vroom)
         db.session.add(room)
         db.session.commit()
         user.msg_self("\nRoom created: {}".format(room_name))
@@ -249,7 +249,7 @@ def do_deck(user, args):
             num_cards = 0
             for card in user.deck.cards:
                 num_cards += user.deck.cards[card]
-                s_card = db.session.query(db.models.Card).get(card)
+                s_card = db.session.query(db.models.Card).get(int(card))
                 buff += style.body_40("{:^3} x {:<25}".format(user.deck.cards[card], s_card.name))
             buff += style.body_40(" [{}]".format(num_cards, ''), align='left')
             buff += style.FOOTER_40
@@ -260,7 +260,7 @@ def do_deck(user, args):
         if args is None:
             do_help(user, ['deck'])
         else:
-            deck_name = ' '.join(args)
+            deck_name = mud.colour.strip(' '.join(args))
             for d in user.decks:
                 if d.name == deck_name:
                     user.msg_self("\nYou already have a deck named '{}'.".format(deck_name))
@@ -268,7 +268,7 @@ def do_deck(user, args):
             new_deck = db.models.Deck(
                 name = deck_name,
                 user_id = user.db.id,
-                cards = {'total': 0}
+                cards = {}
             )
             db.session.add(new_deck)
             user.decks.append(new_deck)
@@ -284,7 +284,7 @@ def do_deck(user, args):
             for deck in user.decks:
                 if deck.name == deck_name:
                     user.deck = deck
-                    db.session.add(user)
+                    db.session.add(user.db)
                     db.session.commit()
                     print(user.deck)
                     user.msg_self("\n'{}' is now your active deck.".format(deck.name))
@@ -313,14 +313,15 @@ def do_deck(user, args):
             user.msg_self("\nMultiple cards called {}: {}\nPlease be more specific.".format(card_name, ', '.join(card.name for card in s_cards)))
             return
         s_card = s_cards[0]
-
-        if user.deck.cards['total'] >= 600:
+        total_cards = 0
+        for card in user.deck.cards:
+            total_cards += user.deck.cards[card]
+        if total_cards >= 600:
             user.msg_self("\nYour deck is at the card limit ({}).".format(user.deck.cards['total']))
         if s_card.id in user.deck.cards:
             user.deck.cards[s_card.id] += num_cards
         else:
             user.deck.cards[s_card.id] = num_cards
-        user.deck.cards['total'] += 1
         db.session.commit()
         user.msg_self("\nAdded {} x '{}' to '{}'.".format(num_cards, s_card.name, user.deck.name))
 
@@ -389,7 +390,7 @@ def do_table(user, args):
         if args is None:
             do_help(user, ['table'])
             return
-        table_name = ' '.join(args)
+        table_name = mud.colour.strip(' '.join(args))
         table_ = mud.models.Table(user, table_name)
         server.tables.append(table_)
         user.room.tables.append(table_)
@@ -430,26 +431,23 @@ def do_table(user, args):
             do_help(user, ['table', 'draw'])
             return
         user.table.draw(user, args[0])
-        channels.do_action(user, "draw {} cards.".format(args[0]), "draws {} cards.".format(user.name, args[0]))
+        channels.do_action(user, "draw {} cards.".format(args[0]), "draws {} cards.".format(args[0]))
 
     def hand(args):
         user.msg_self(user.table.hand(user))
 
     def play(args):
         table = user.table
-        if args is None or not str(args[0]).isdigit():
-            do_help(user ['table', 'play'])
+        if args is None or not str(args[0]).isdigit() or not table.hands[user][int(args[0])]:
+            do_help(user, ['table', 'play'])
             return
-        if not table.hands[user][int(args[0])]:
-            do_help(user ['table', 'play'])
-            return
-        table.battlefields[user].append(table.hands[user][int(args[0])])
-        channels.do_action(user, "play {}.".format(table.hands[user][int(args[0])].name), "plays {}.".format(table.hands[user][int(args[0])].name))
-        table.hands[user].pop(int(args[0]))
+        card = table.hands[user][int(args[0])]
+        table.play(user, card)
+        channels.do_action(user, "play {}.".format(card.name), "plays {}.".format(card.name))
 
     def shuffle(args):
         user.table.shuffle(user)
-        channels.do_action(user, "shuffled your library.", "{} shuffled their library.".format(user.name))
+        channels.do_action(user, "shuffled your library.", "shuffled their library.")
 
     def tutor(args):
         if args is None:
@@ -462,27 +460,75 @@ def do_table(user, args):
             user.msg_self("\nFailed to find '{}' in your library.".format(card_name))
 
     def destroy(args):
-        pass
+        table = user.table
+        if args is None or not str(args[0]).isdigit() or not table.battlefields[user][int(args[0])]:
+            do_help(user, ['table', 'destroy'])
+            return
+        card = table.battlefields[user][int(args[0])]
+        table.destroy(user, card)
+        channels.do_action(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
 
-    def bounce(args):
-        pass
+    def return_(args):
+        table = user.table
+        if args is None or not str(args[0]).isdigit() or not table.battlefields[user][int(args[0])]:
+            do_help(user, ['table', 'return'])
+            return
+        card = table.battlefields[user][int(args[0])]
+        table.return_(user, card)
+        channels.do_action(user, "return {} to your hand.".format(card.name), "returns {} to their hand.".format(card.name))
+
+    def greturn(args):
+        table = user.table
+        if args is None or not str(args[0]).isdigit() or not table.graveyards[user][int(args[0])]:
+            do_help(user, ['table', 'greturn'])
+            return
+        card = table.graveyards[user][int(args[0])]
+        table.greturn(user, card)
+        channels.do_action(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
 
     def unearth(args):
-        pass
+        table = user.table
+        if args is None or not str(args[0]).isdigit() or not table.graveyards[user][int(args[0])]:
+            do_help(user, ['table', 'unearth'])
+            return
+        card = table.graveyards[user][int(args[0])]
+        table.unearth(user, card)
+        channels.do_action(user, "unearth your {}.".format(card.name), "unearths their {}.".format(card.name))
 
     def exile(args):
-        pass
+        table = user.table
+        if args is None or not str(args[0]).isdigit() or not table.battlefields[user][int(args[0])]:
+            do_help(user, ['table', 'exile'])
+            return
+        card = table.battlefields[user][int(args[0])]
+        table.exile(user, card)
+        channels.do_action(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
 
     def grexile(args):
-        pass
+        table = user.table
+        if args is None or not str(args[0]).isdigit() or not table.graveyards[user][int(args[0])]:
+            do_help(user, ['table', 'grexile'])
+            return
+        card = table.graveyards[user][int(args[0])]
+        table.grexile(user, card)
+        channels.do_action(user, "exile {} from your graveyard.".format(card.name), "exiles {} from their graveyard.".format(card.name))
 
     verbs = {
         'create': create,
         'join': join,
+        'leave': leave,
         'stack': stack,
         'draw': draw,
         'hand': hand,
-        'play': play
+        'shuffle': shuffle,
+        'play': play,
+        'tutor': tutor,
+        'destroy': destroy,
+        'return': return_,
+        'greturn': greturn,
+        'unearth': unearth,
+        'exile': exile,
+        'grexile': grexile
     }
 
 

@@ -1,0 +1,28 @@
+&c||############################################################################||&x
+&c||&x                                 &WHELP&x                                       &c||&x
+&c||============================================================================||&x
+&c||&x                                                                            &c||&x
+&c||&x                               &WColours&x                                      &c||&x
+&c||____________________________________________________________________________||&x
+&c||&x                                                                            &c||&x
+&c||&x  To add colours to your text, you can use a colour token listed below:     &c||&x
+&c||&x                                                                            &c||&x
+&c||&x                  &b&&bb - black&x                                                &c||&x
+&c||&x                  &B&&BB - bright black&x                                         &c||&x
+&c||&x                  &r&&rr - red&x                                                  &c||&x
+&c||&x                  &R&&RR - bright red&x                                           &c||&x
+&c||&x                  &g&&gg - green&x                                                &c||&x
+&c||&x                  &G&&GG - bright green&x                                         &c||&x
+&c||&x                  &y&&yy - yellow&x                                               &c||&x
+&c||&x                  &Y&&YY - bright yellow&x                                        &c||&x
+&c||&x                  &u&&uu - blue&x                                                 &c||&x
+&c||&x                  &U&&UU - bright blue&x                                          &c||&x
+&c||&x                  &m&&mm - magenta&x                                              &c||&x
+&c||&x                  &M&&MM - bright magenta&x                                       &c||&x
+&c||&x                  &c&&cc - cyan&x                                                 &c||&x
+&c||&x                  &C&&CC - bright cyan&x                                          &c||&x
+&c||&x                  &w&&ww - white&x                                                &c||&x
+&c||&x                  &W&&WW - bright white&x                                         &c||&x
+&c||&x                  &x&&xx - reset back to default&x                                &c||&x
+&c||&x                                                                            &c||&x
+&c||############################################################################||&x

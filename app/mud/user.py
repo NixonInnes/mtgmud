@@ -13,6 +13,7 @@ class User(Protocol):
         self.name = None
         self.admin = False
         self.room = None
+        self.table = None
         self.db = None
 
         self.flags = []
@@ -21,7 +22,7 @@ class User(Protocol):
         server.connected.append(self)
 
         #TODO: Add a welcome function
-        self.msg_self("\n$b#$r#$g#$y#$u#$m#$c#$w#$x## Welcome to MtGMUD!! ##########\n\nLogin: <username> <password>\nRegister: register <username> <password> <password>")
+        actions['help'](self, ['welcome'])
         self.get_prompt()
 
     def data_received(self, data):
@@ -48,13 +49,15 @@ class User(Protocol):
 
     def get_prompt(self):
         # [username]<deck (60)>>>
-        buff = "\n"
+        buff = "\n\n"
         if self.name is not None:
-            buff += "[{}]".format(self.name)
+            buff += "&B<&x &c{}&x".format(self.name)
             if self.deck is not None:
-                buff += "<{} ({})>".format(self.deck.name, self.deck.no_cards)
-        buff += ">> "
-        self.transport.write(buff.encode())
+                buff += " &B||&x &c{}&x &C(&x&c{}&x&C) &B>&x".format(self.deck.name, self.deck.no_cards)
+            if self.table is not None:
+                buff += " &B||&x &YH&x:&Y{}&x &GL&x:&G{}&x ".format(len(self.table.hands[self]), len(self.table.libraries[self]))
+        buff += "&w>> &x"
+        self.msg_self(buff)
 
     def msg_self(self, msg):
         self.msg_user(self, msg)
@@ -68,7 +71,7 @@ class User(Protocol):
         for user in server.users:
             if user.db.id is dbUser.id:
                 self.msg_user(user, "\nYou have signed in from another location!")
-                actions.do_quit(user, None)
+                actions['quit'](user, None)
         self.authd = True
         self.name = str(dbUser.name)
         self.admin = bool(dbUser.admin)
@@ -92,4 +95,4 @@ class User(Protocol):
         if self.authd:
             self.save()
             server.users.remove(self)
-            self.user.room.occupants.remove(self.user)
+            self.room.occupants.remove(self)

@@ -29,7 +29,7 @@ class Mud(object):
         self.ticker = 0
         self.tick = PeriodicExecutor(1, self.do_tick)
         self.tick.start()
-        self.ticks.append((self.test_tick,60))
+        self.ticks.append((self.test_tick,60*60))
 
 
         print("Checking Room database...")
@@ -78,7 +78,7 @@ class Mud(object):
 
     def test_tick(self):
         for user in self.users:
-            user.msg_self("\n[ANNOUNCEMENT] This is a test")
+            user.msg_self("\n&W[&RANNOUNCEMENT&W]&x Ding-dong. Another hour has gone by...")
 
     @staticmethod
     def update_cards():

@@ -1,57 +1,57 @@
 from textwrap import wrap
 
-FOOTER_80 =        "\n||############################################################################||"
-BLANK_80 =         "\n||                                                                            ||"
-ROW_LINE_80 =      "\n||============================================================================||"
-BLANK_2COL_80=     "\n||                                     ||                                     ||"
-ROW_LINE_2COL_80 = "\n||=====================================||=====================================||"
-BLANK_3COL_80 =    "\n||                        ||                        ||                        ||"
-ROW_LINE_3COL_80 = "\n||========================||========================||========================||"
+FOOTER_80 =        "\n&c||############################################################################||&x"
+BLANK_80 =         "\n&c||                                                                            ||&x"
+ROW_LINE_80 =      "\n&c||============================================================================||&x"
+BLANK_2COL_80=     "\n&c||                                     ||                                     ||&x"
+ROW_LINE_2COL_80 = "\n&c||=====================================||=====================================||&x"
+BLANK_3COL_80 =    "\n&c||                        ||                        ||                        ||&x"
+ROW_LINE_3COL_80 = "\n&c||========================||========================||========================||&x"
 
-FOOTER_40 =        "\n||####################################||"
-BLANK_40 =         "\n||                                    ||"
-ROW_LINE_40 =      "\n||====================================||"
-BLANK_2COL_40 =    "\n||                 ||                 ||"
-ROW_LINE_2COL_40 = "\n||=================||=================||"
+FOOTER_40 =        "\n&c||####################################||&x"
+BLANK_40 =         "\n&c||                                    ||&x"
+ROW_LINE_40 =      "\n&c||====================================||&x"
+BLANK_2COL_40 =    "\n&c||                 ||                 ||&x"
+ROW_LINE_2COL_40 = "\n&c||=================||=================||&x"
 
 def header_80(title):
-    buff = "\n||##########################[ {:^20} ]##########################||".format(title)
+    buff = "\n&c||##########################&C[&x &W{:^20}&x &C]&x&c##########################||&x".format(title)
     buff += BLANK_80
     return buff
 
 def body_80(string, align='center'):
     if align == 'left':
-        buff = "\n|| {:<74} ||".format(string)
+        buff = "\n&c||&x {:<74} &c||&x".format(string)
     elif align == 'right':
-        buff = "\n|| {:>74} ||".format(string)
+        buff = "\n&c||&x {:>74} &c||&x".format(string)
     else: # center
-        buff = "\n|| {:^74} ||".format(string)
+        buff = "\n&c||&x {:^74} &c||&x".format(string)
     return buff
 
 def body_2cols_80(stringA, stringB):
-    buff = "\n|| {:^35} || {:^35} ||".format(stringA, stringB)
+    buff = "\n&c||&x {:^35} &c||&x {:^35} &c||&x".format(stringA, stringB)
     return buff
 
 def body_3cols_80(stringA, stringB, stringC):
-    buff = "\n|| {:^22} || {:^22} || {:^22} ||".format(stringA, stringB, stringC)
+    buff = "\n&c||&x {:^22} &c||&x {:^22} &c||&x {:^22} &c||&x".format(stringA, stringB, stringC)
     return buff
 
 def header_40(title):
-    buff = "\n||###########[ {:^10} ]###########||".format(title)
+    buff = "\n&c||###########&C[&x &W{:^10}&x &C]&x&c###########||&x".format(title)
     buff += BLANK_40
     return buff
 
 def body_40(string, align='center'):
     if align == 'left':
-        buff = "\n|| {:<34} ||".format(string)
+        buff = "\n&c||&x {:<34} &c||&x".format(string)
     elif align == 'right':
-        buff = "\n|| {:>34} ||".format(string)
+        buff = "\n&c||&x {:>34} &c||&x".format(string)
     else: # center
-        buff = "\n|| {:^34} ||".format(string)
+        buff = "\n&c||&x {:^34} &c||&x".format(string)
     return buff
 
 def body_2cols_40(stringA, stringB):
-    buff = "\n|| {:^14} || {:^14} ||".format(stringA, stringB)
+    buff = "\n&c||&x {:^14} &c||&x {:^14} &c||&x".format(stringA, stringB)
     return buff
 
 def card(card):
@@ -76,32 +76,38 @@ def card(card):
 
 
 def room_name(name):
-    buff = "\n.-~~~~~~~~~~~~~~~~~~~~~~~~~~{{ {:^20} }}~~~~~~~~~~~~~~~~~~~~~~~~~~-.".format(name)
+    buff = "\n&y.-~~~~~~~~~~~~~~~~~~~~~~~~~~&Y{{&W {:^20} &Y}}&x&y~~~~~~~~~~~~~~~~~~~~~~~~~~-.&x".format(name)
     return buff
 
 def room_desc(desc):
-    buff = "\n"
+    buff = ""
+    buff += "\n&y:                                                                              &y:&x"
     desc = wrap(desc, width=72)
     for line in desc:
-        buff += ":   {:<72}   :".format(line)
+        buff += "\n&y:&x   {:<72}   &y:&x".format(line)
+    buff += "\n&y:                                                                              &y:&x"
     return buff
 
 def room_occupants(occs):
-    buff = "\n"
+    buff = ""
     occs = ', '.join(occs)
     occs = wrap(occs, width=76)
     for line in occs:
-        buff += "## {:<72} ##".format(line)
+        buff += "\n&Y#[&x {:<74} &Y]#&x".format(line)
     return buff
 
 def table_header(name):
-    buff = "\n===========================[[ {:^20} ]]===========================".format(name)
+    buff = "\n&g===========================&G[[&W {:^20} &G]]&g===========================&x".format(name)
     return buff
 
 def table_user(name):
-    buff = "+++++ {:^28} ++++|".format(name)
+    buff = "&G|&x&g++++&w {:^28} &g++++&G|&x".format(name)
     return buff
 
 def table_card(index, card):
-    buff = "+ ({:2}) [{:1}] {:<27} |".format(index, "T" if card.tapped else "", card.name)
+    buff = "&G|&x ({:2}) [{:1}] {:<27} &G|&x".format(index, "T" if card.tapped else "", card.name)
+    return buff
+
+def table_card_blank():
+    buff = "&G|                                      |&x"
     return buff

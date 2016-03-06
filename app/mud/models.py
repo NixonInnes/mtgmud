@@ -63,7 +63,7 @@ class Table(object):
     def stack(self, user):
         for card in user.deck.cards:
             dbCard = db.session.query(db.models.Card).get(card)
-            for i in range(card):
+            for i in range(user.deck.cards[card]):
                 self.libraries[user].append(Card.load(dbCard))
         self.life_totals[user] = 20
         self.poison_counters[user] = 0
@@ -71,22 +71,40 @@ class Table(object):
     def shuffle(self, user):
         shuffle(self.libraries[user])
 
-    def draw_card(self, user, num=1):
+    def draw(self, user, num=1):
         for i in range(int(num)):
             self.hands[user].append(self.libraries[user][0])
             self.libraries[user].pop(0)
 
     def show(self):
         buff = style.table_header(self.name)
+        user_list = []
         for user in self.battlefields:
             card_list = [style.table_user(user.name)]
+            lands_list = []
+            artifacts_list = []
+            enchantments_list = []
+            creatures_list = []
+            others_list = []
             for card in self.battlefields[user]:
-                card_list.append(style.table_card(self.battlefields[user].index(card), card))
-            user_list = [card_list[:]]
+                if 'Land' in card.types:
+                    lands_list.append(style.table_card(self.battlefields[user].index(card), card))
+                elif 'Artifact' in card.types:
+                    artifacts_list.append(style.table_card(self.battlefields[user].index(card), card))
+                elif 'Enchantment' in card.types:
+                    enchantments_list.append(style.table_card(self.battlefields[user].index(card), card))
+                elif 'Creature' in card.types:
+                    creatures_list.append(style.table_card(self.battlefields[user].index(card), card))
+                else:
+                    others_list.append(style.table_card(self.battlefields[user].index(card), card))
+            card_list += lands_list+artifacts_list+enchantments_list+creatures_list+others_list
+            user_list.append(card_list[:])
+        for i in range(len(user_list[0])):
+            user_list[0][i] = '\n' + user_list[0][i]
         battlefield_list = list(zip_longest(*user_list))
         for lines in battlefield_list:
             for line in lines:
-                buff += "\n{}".format("||"+" "*20+"|" if line is None else line)
+                buff += style.table_card_blank() if line is None else line
         return buff
 
     def hand(self, user):
@@ -97,7 +115,7 @@ class Table(object):
         return buff
 
     def play(self, user, card):
-        self.battlefields[user].append(self.hands[user][card])
+        self.battlefields[user].append(card)
         self.hands[user].remove(card)
 
     def discard(self, user, card):
