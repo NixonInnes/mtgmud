@@ -24,7 +24,7 @@ def do_login(user, args):
                 user.get_prompt()
                 return
 
-            dbUser = db.models.User(name=args[1], password=args[2])
+            dbUser = db.models.User(name=args[1], password=args[2], aliases={})
             db.session.add(dbUser)
             db.session.commit()
             user.load(dbUser)
@@ -121,21 +121,21 @@ def do_help(user, args):
 def do_alias(user, args):
     if args is None:
         buff = style.header_40('Aliases')
-        for alias in user.aliases:
-            buff += style.body_40("{}: {}".format(alias, user.aliases[alias]))
+        for alias in user.db.aliases:
+            buff += style.body_40("{}: {}".format(alias, user.db.aliases[alias]))
         buff += style.BLANK_40
         buff += style.FOOTER_40
         user.msg_self(buff)
         return
     if args[0] == 'delete' and len(args) > 1:
-        if args[1] in user.aliases:
-            user.aliases.pop(args[1])
+        if args[1] in user.db.aliases:
+            user.db.aliases.pop(args[1])
             user.msg_self("\nAlias '{}' has been deleted.".format(args[1]))
             return
         user.msg_self("You have no '{}' alias.".format(args[1]))
         return
-    user.aliases[args[0]] = ' '.join(args[1:])
-    #db.session.commit()
+    user.db.aliases[args[0]] = ' '.join(args[1:])
+    db.session.commit()
     user.msg_self("\nAlias '{}:{}' created.".format(args[0], ' '.join(args[1:])))
 
 

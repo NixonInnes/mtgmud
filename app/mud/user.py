@@ -21,7 +21,6 @@ class User(Protocol):
         print("Connected: {}".format(self.addr))
         server.connected.append(self)
 
-        #TODO: Add a welcome function
         actions['help'](self, ['welcome'])
         self.get_prompt()
 
@@ -34,9 +33,9 @@ class User(Protocol):
             return
 
         if len(args) > 0 and not args[0] == 'alias':
-            for alias in self.aliases:
+            for alias in self.db.aliases:
                 if alias in args:
-                    args[args.index(alias)] = str(self.aliases[alias])
+                    args[args.index(alias)] = str(self.db.aliases[alias])
             args = str(' '.join(args)).split()
 
         if msg:
@@ -44,12 +43,10 @@ class User(Protocol):
                 channels[msg[0]](self, msg[1:])
                 self.get_prompt()
                 return
-
             if args[0] in actions:
                 actions[args[0]](self, args[1:] if len(args) > 1 else None)
                 self.get_prompt()
                 return
-
             self.msg_self("\nHuh?")
         else:
             if self.table is not None:
@@ -85,7 +82,7 @@ class User(Protocol):
                 actions['quit'](user, None)
         self.authd = True
         self.name = str(dbUser.name)
-        self.aliases = dbUser.aliases
+        #self.aliases = dbUser.aliases
         self.admin = bool(dbUser.admin)
         self.deck = dbUser.deck
         self.decks = dbUser.decks
