@@ -118,6 +118,27 @@ def do_help(user, args):
     user.msg_self(help_)
 
 
+def do_alias(user, args):
+    if args is None:
+        buff = style.header_40('Aliases')
+        for alias in user.aliases:
+            buff += style.body_40("{}: {}".format(alias, user.aliases[alias]))
+        buff += style.BLANK_40
+        buff += style.FOOTER_40
+        user.msg_self(buff)
+        return
+    if args[0] == 'delete' and len(args) > 1:
+        if args[1] in user.aliases:
+            user.aliases.pop(args[1])
+            user.msg_self("\nAlias '{}' has been deleted.".format(args[1]))
+            return
+        user.msg_self("You have no '{}' alias.".format(args[1]))
+        return
+    user.aliases[args[0]] = ' '.join(args[1:])
+    #db.session.commit()
+    user.msg_self("\nAlias '{}:{}' created.".format(args[0], ' '.join(args[1:])))
+
+
 def do_dice(user, args):
     """
     Simulates a dice roll, and sends results to users on the initiating users table.
@@ -126,12 +147,18 @@ def do_dice(user, args):
     :param args: Dice size
     :return: None
     """
-    if args is None:
-        args = [6] #Default dice size
-    if user.table is None or not str(args[0]).isdigit():
+    if user.table is None:
         do_help(user, ['dice'])
         return
-    channels.do_action(user, "rolled a {} on a {} sided dice.".format(randint(1, args[0]), args[0]), "rolled a {} on a {} sided dice.".format(randint(1, args[0]), args[0]))
+
+    if args is not None:
+        if str(args[0]).isdigit():
+            die_size = int(args[0])
+        else:
+            do_help(user, ['dice'])
+    else:
+        die_size = 6 #Default dice size
+    channels.do_action(user, "rolled a {} on a {} sided dice.".format(randint(1, die_size), die_size), "rolled a {} on a {} sided dice.".format(randint(1, die_size), die_size))
 
 
 def do_card(user, args):
@@ -388,7 +415,7 @@ def do_decks(user, args):
 def do_table(user, args):
     def create(args):
         if args is None:
-            do_help(user, ['table'])
+            do_help(user, ['table', 'create'])
             return
         table_name = mud.colour.strip(' '.join(args))
         table_ = mud.models.Table(user, table_name)
@@ -591,6 +618,7 @@ actions = {
     'look':  do_look,
     'who':   do_who,
     'help':  do_help,
+    'alias': do_alias,
     'dice':  do_dice,
     'rooms': do_rooms,
     'room':  do_room,

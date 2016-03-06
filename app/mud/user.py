@@ -33,6 +33,12 @@ class User(Protocol):
             actions['login'](self, args)
             return
 
+        if len(args) > 0 and not args[0] == 'alias':
+            for alias in self.aliases:
+                if alias in args:
+                    args[args.index(alias)] = str(self.aliases[alias])
+            args = str(' '.join(args)).split()
+
         if msg:
             if msg[0] in channels:
                 channels[msg[0]](self, msg[1:])
@@ -45,10 +51,15 @@ class User(Protocol):
                 return
 
             self.msg_self("\nHuh?")
+        else:
+            if self.table is not None:
+                actions['table'](self, None)
+            elif self.room is not None:
+                actions['look'](self, None)
+
         self.get_prompt()
 
     def get_prompt(self):
-        # [username]<deck (60)>>>
         buff = "\n\n"
         if self.name is not None:
             buff += "&B<&x &c{}&x".format(self.name)
@@ -74,6 +85,7 @@ class User(Protocol):
                 actions['quit'](user, None)
         self.authd = True
         self.name = str(dbUser.name)
+        self.aliases = dbUser.aliases
         self.admin = bool(dbUser.admin)
         self.deck = dbUser.deck
         self.decks = dbUser.decks

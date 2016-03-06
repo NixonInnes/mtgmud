@@ -25,11 +25,11 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
+    aliases = Column(MutableDict.as_mutable(PickleType), default={})
     admin = Column(String, default=False)
     decks = relationship('Deck')
     deck = relationship('Deck', uselist=False, back_populates='user')
     _password = Column(String)
-
 
     @property
     def password(self):
@@ -41,6 +41,10 @@ class User(Base):
 
     def verify_password(self, password):
         return check_password_hash(password, self._password)
+
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        self.aliases = {}
 
     def __repr__(self):
         return "<User(username='{}')>".format(self.username)
