@@ -438,6 +438,9 @@ def do_table(user, args):
         user.msg_self("\nCould not find table '{}".format(table_name))
 
     def leave(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         user.table.leave(user)
         channels.do_action(user, "left the table.", "left the table.")
 
@@ -450,6 +453,12 @@ def do_table(user, args):
         channels.do_action(user, "stacked your library.", "stacked their library.")
 
     def draw(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
+        if user.table.libraries[user].__len__() < 1:
+            user.msg_self("\nYour library is empty!")
+            return
         if args is None:
             user.table.draw(user)
             channels.do_action(user, "draw a card.", "draws a card.")
@@ -461,10 +470,19 @@ def do_table(user, args):
         channels.do_action(user, "draw {} cards.".format(args[0]), "draws {} cards.".format(args[0]))
 
     def hand(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         user.msg_self(user.table.hand(user))
 
     def play(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
+        card_index = int(args[0])
+        if card_index >= len(table.hands[user]) or card_index < 0:
+            user.msg_self("\nIndex out of range. Please choose card: 0 - {}".format(len(table.hands[user])-1))
         if args is None or not str(args[0]).isdigit() or not table.hands[user][int(args[0])]:
             do_help(user, ['table', 'play'])
             return
@@ -473,6 +491,9 @@ def do_table(user, args):
         channels.do_action(user, "play {}.".format(card.name), "plays {}.".format(card.name))
 
     def tap(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
         if args is None:
             do_help(user, ['table', 'tap'])
@@ -492,6 +513,9 @@ def do_table(user, args):
             do_help(user, ['table', 'tap'])
 
     def untap(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
         if args is None:
             do_help(user, ['table', 'untap'])
@@ -512,10 +536,16 @@ def do_table(user, args):
 
 
     def shuffle(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         user.table.shuffle(user)
         channels.do_action(user, "shuffled your library.", "shuffled their library.")
 
     def tutor(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         if args is None:
             do_help(user, ['table', 'tutor'])
             return
@@ -526,6 +556,9 @@ def do_table(user, args):
             user.msg_self("\nFailed to find '{}' in your library.".format(card_name))
 
     def destroy(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
         if args is None or not str(args[0]).isdigit() or not table.battlefields[user][int(args[0])]:
             do_help(user, ['table', 'destroy'])
@@ -535,6 +568,9 @@ def do_table(user, args):
         channels.do_action(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
 
     def return_(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
         if args is None or not str(args[0]).isdigit() or not table.battlefields[user][int(args[0])]:
             do_help(user, ['table', 'return'])
@@ -544,6 +580,9 @@ def do_table(user, args):
         channels.do_action(user, "return {} to your hand.".format(card.name), "returns {} to their hand.".format(card.name))
 
     def greturn(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
         if args is None or not str(args[0]).isdigit() or not table.graveyards[user][int(args[0])]:
             do_help(user, ['table', 'greturn'])
@@ -553,6 +592,9 @@ def do_table(user, args):
         channels.do_action(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
 
     def unearth(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
         if args is None or not str(args[0]).isdigit() or not table.graveyards[user][int(args[0])]:
             do_help(user, ['table', 'unearth'])
@@ -562,6 +604,9 @@ def do_table(user, args):
         channels.do_action(user, "unearth your {}.".format(card.name), "unearths their {}.".format(card.name))
 
     def exile(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
         if args is None or not str(args[0]).isdigit() or not table.battlefields[user][int(args[0])]:
             do_help(user, ['table', 'exile'])
@@ -571,6 +616,9 @@ def do_table(user, args):
         channels.do_action(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
 
     def grexile(args):
+        if user.table is None:
+            user.msg_self("\nYou're not at a table!")
+            return
         table = user.table
         if args is None or not str(args[0]).isdigit() or not table.graveyards[user][int(args[0])]:
             do_help(user, ['table', 'grexile'])
