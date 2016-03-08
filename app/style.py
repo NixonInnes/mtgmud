@@ -55,25 +55,40 @@ def body_2cols_40(stringA, stringB):
     return buff
 
 def card(card):
-    buff = "\n****************************************"
-    buff +="\n* {:<29} {:>6} *".format(card.name, str(card.manaCost) if card.manaCost is not None else "")
-    buff +="\n****************************************"
-    buff +="\n* {:<36} *".format(card.type)
-    buff +="\n****************************************"
-    buff += "\n*                                      *"
+    if card.colors is None:
+        c_token = "&w"
+    elif len(card.colors) > 1:
+        c_token = "&Y"
+    elif 'White' in card.colors:
+        c_token = "&W"
+    elif 'Blue' in card.colors:
+        c_token = "&U"
+    elif 'Black' in card.colors:
+        c_token = "&B"
+    elif 'Red' in card.colors:
+        c_token = "&R"
+    elif 'Green' in card.colors:
+        c_token = "&G"
+    else:
+        c_token = "&w"
+    buff = "\n"+c_token+"****************************************&x"
+    buff +="\n"+c_token+"*&x {:<29} {:>6} ".format(card.name, str(card.manaCost) if card.manaCost is not None else "")+c_token+"*&x"
+    buff +="\n"+c_token+"****************************************&x"
+    buff +="\n"+c_token+"*&x {:<36} ".format(card.type)+c_token+"*&x"
+    buff += "\n"+c_token+"****************************************&x"
+    buff += "\n"+c_token+"*                                      *&x"
     if card.text is not None:
         textbox = wrap(card.text, width=36)
         for line in textbox:
-            buff += "\n* {:<36} *".format(line)
+            buff += "\n"+c_token+"*&x {:<36} ".format(line)+c_token+"*&x"
     if card.power is not None:
-        buff += "\n*                              {:^3}/{:^3} *".format(str(card.power), str(card.toughness))
+        buff += "\n"+c_token+"*&x                              {:^3}/{:^3} ".format(str(card.power), str(card.toughness))+c_token+"*&x"
     elif card.loyalty is not None:
-        buff += "\n*                                   {:^3} *".format(str(card.loyalty))
+        buff += "\n"+c_token+"*&x                                   {:^3} ".format(str(card.loyalty))+c_token+"*&x"
     else:
-        buff += "\n*                                      *"
-    buff += "\n****************************************"
+        buff += "\n"+c_token+"*                                      *&x"
+    buff += "\n"+c_token+"****************************************&x"
     return buff
-
 
 def room_name(name):
     buff = "\n&y.-~~~~~~~~~~~~~~~~~~~~~~~~~~&Y{{&W {:^20} &Y}}&x&y~~~~~~~~~~~~~~~~~~~~~~~~~~-.&x".format(name)

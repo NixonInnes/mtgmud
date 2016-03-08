@@ -267,33 +267,16 @@ def do_dice(user, args):
 def do_card(user, args):
     """
     Queries the card database, and sends results to the user.
-
-    :param user: server.Protocol()
-    :param args: |find|
-    :return: None
     """
-    def find(args):
-        card_name = ' '.join(args)
-        cards = db.models.Card.search(card_name)
-        if len(cards) < 1:
-            user.msg_self("\nCould not find card: {}".format(card_name))
-            return
-        buff = ""
-        for card in cards:
-            buff += style.card(card)
-        user.msg_self(buff)
-
-    verbs = {
-        'find': find
-    }
-
-    if args is None:
-        do_help(user, ['card'])
+    card_name = ' '.join(args)
+    cards = db.models.Card.search(card_name)
+    if len(cards) < 1:
+        user.msg_self("\nCould not find card: {}".format(card_name))
         return
-    if args[0] in verbs:
-        verbs[args[0]](args[1:] if len(args) > 1 else None)
-        return
-    do_help(user, ['card'])
+    buff = ""
+    for card in cards:
+        buff += style.card(card)
+    user.msg_self(buff)
 
 
 def do_rooms(user, args):
