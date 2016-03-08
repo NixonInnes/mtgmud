@@ -13,22 +13,22 @@ from app import config
 from app.mud.user import User
 
 def main():
-        print("Server starting up...")
-        loop = asyncio.get_event_loop()
-        coroutine = loop.create_server(User, host=config.HOST, port=config.PORT)
-        server = loop.run_until_complete(coroutine)
+    print("Server starting up...")
+    loop = asyncio.get_event_loop()
+    coroutine = loop.create_server(User, host=config.HOST, port=config.PORT)
+    server = loop.run_until_complete(coroutine)
 
-        print("Server now listening on {}".format(server.sockets[0].getsockname()))
+    print("Server now listening on {}".format(server.sockets[0].getsockname()))
 
-        try:
-            loop.run_forever()
-        except KeyboardInterrupt:
-            print("Keyboard Interrupt! \nExiting...")
-            pass
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        print("Keyboard Interrupt! \nExiting...")
+        pass
 
-        server.close()
-        loop.run_until_complete(server.wait_closed())
-        loop.close()
+    server.close()
+    loop.run_until_complete(server.wait_closed())
+    loop.close()
 
 
 if __name__ == '__main__':

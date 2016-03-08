@@ -105,7 +105,7 @@ def table_user(name):
     return buff
 
 def table_user_stats(life, hand, library, graveyard, poison=None):
-    buff ="&G|&x&g+++&x HP:&r{:^3}&x H:{:^3} L:{:^3} G:{:^3} {:^5} &g+++&x&G|&x".format(life, hand, library, graveyard, "P:{:^3}".format(poison) if poison is not None else "")
+    buff ="&G|&x&g+++&x &RLi&x:&R{:^3}&x &GH&x:&G{:^3}&x &YL&x:&Y{:^3}&x &yG&x:&y{:^3}&x {:^5} &g+++&x&G|&x".format(life, hand, library, graveyard, "&MP&x:&M{:^3}&x".format(poison) if poison is not None else "")
     return buff
 
 def table_card(index, card):

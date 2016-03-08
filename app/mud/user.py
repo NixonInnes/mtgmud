@@ -1,7 +1,7 @@
 from asyncio import Protocol
 
 from .colour import colourify
-from app import db, server
+from app import db, server, config
 from app.player import actions, channels
 
 class User(Protocol):
@@ -32,19 +32,25 @@ class User(Protocol):
             actions['login'](self, args)
             return
 
-        if len(args) > 0 and not args[0] == 'alias':
-            for alias in self.db.aliases:
-                if alias in args:
-                    args[args.index(alias)] = str(self.db.aliases[alias])
-            args = str(' '.join(args)).split()
-
         if msg:
+
+            if args[0] in self.db.aliases:
+                args[0] = str(self.db.aliases[args[0]])
+                msg = ' '.join(args)
+                args = msg.split()
+
             if msg[0] in channels:
-                channels[msg[0]](self, msg[1:])
+                if self.is_muted():
+                    self.msg_self("\n*ZIP* Shhh, you're muted!")
+                else:
+                    channels[msg[0]](self, msg[1:])
                 self.get_prompt()
                 return
             if args[0] in actions:
-                actions[args[0]](self, args[1:] if len(args) > 1 else None)
+                if self.is_frozen():
+                    self.msg_self("\nYou're frozen solid!")
+                else:
+                    actions[args[0]](self, args[1:] if len(args) > 1 else None)
                 self.get_prompt()
                 return
             self.msg_self("\nHuh?")
@@ -59,16 +65,31 @@ class User(Protocol):
     def get_prompt(self):
         buff = "\n\n"
         if self.name is not None:
-            buff += "&B<&x &c{}&x".format(self.name)
+            buff += "&B<&x &c{}&x ".format(self.name)
             if self.deck is not None:
-                buff += " &B||&x &c{}&x &C(&x&c{}&x&C) &B>&x".format(self.deck.name, self.deck.no_cards)
+                buff += "&B||&x &c{}&x &C(&x&c{}&x&C)&x ".format(self.deck.name, self.deck.no_cards)
             if self.table is not None:
-                buff += " &B||&x &YH&x:&Y{}&x &GL&x:&G{}&x ".format(len(self.table.hands[self]), len(self.table.libraries[self]))
-        buff += "&w>> &x"
+                buff += "&B||&x &GH&x:&G{}&x &YL&x:&Y{}&x &yG&x:&y{}&x ".format(len(self.table.hands[self]), len(self.table.libraries[self]), len(self.table.graveyards[self]))
+        buff += "&B>&x&w>> &x"
         self.msg_self(buff)
 
     def msg_self(self, msg):
         self.msg_user(self, msg)
+
+    def is_admin(self):
+        return self.flags['admin']
+
+    def is_muted(self):
+        return self.flags['muted']
+
+    def is_frozen(self):
+        return self.flags['frozen']
+
+    def is_banned(self):
+        return self.flags['banned']
+
+    def can_spectate(self):
+        return self.flags['allow_spec']
 
     @staticmethod
     def msg_user(user, msg):
@@ -82,8 +103,7 @@ class User(Protocol):
                 actions['quit'](user, None)
         self.authd = True
         self.name = str(dbUser.name)
-        #self.aliases = dbUser.aliases
-        self.admin = bool(dbUser.admin)
+        self.flags = dict(dbUser.flags)
         self.deck = dbUser.deck
         self.decks = dbUser.decks
         self.db = dbUser
@@ -92,9 +112,13 @@ class User(Protocol):
         self.room = lobby
         lobby.occupants.append(self)
 
+        if self.name == config.ADMIN and not self.is_admin():
+            self.flags['admin'] = True
+            self.save()
+
     def save(self):
         self.db.name = self.name
-        self.db.admin = self.admin
+        self.db.flags = self.flags
         db.session.commit()
 
     def connection_lost(self, ex):

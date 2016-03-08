@@ -31,6 +31,7 @@ class Table(object):
     def __init__(self, user, name):
         self.owner = user
         self.name = name
+        self.start_time = 0
         self.battlefields = {}
         self.graveyards = {}
         self.exiles = {}
@@ -39,6 +40,10 @@ class Table(object):
         self.life_totals = {}
         self.poison_counters = {}
         self.users = []
+
+    def round_timer(self):
+        for user in self.users:
+            user.msg_self("\n&W[&x&gtable&x&W]&x &g50 minutes has elapsed.&w")
 
     def join(self, user):
         self.users.append(user)
@@ -61,6 +66,7 @@ class Table(object):
         self.users.pop(user)
 
     def stack(self, user):
+        user.table.libraries[user].clear()
         for card in user.deck.cards:
             dbCard = db.session.query(db.models.Card).get(card)
             for i in range(user.deck.cards[card]):

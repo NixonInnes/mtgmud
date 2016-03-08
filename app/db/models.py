@@ -1,5 +1,5 @@
 from passlib.hash import pbkdf2_sha256
-from sqlalchemy import Column, Integer, String, PickleType, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, PickleType, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
@@ -13,9 +13,16 @@ Session = sessionmaker(bind=engine)
 session = Session()
 Base = declarative_base()
 
+USER_FLAGS = {
+    'admin':False,
+    'allow_spec': False,
+    'banned': False,
+    'muted': False,
+    'frozen': False
+}
+
 def generate_password_hash(password):
     return pbkdf2_sha256.encrypt(password, rounds=150000, salt_size=15)
-
 
 def check_password_hash(password, password_hash):
     return pbkdf2_sha256.verify(password, password_hash)
@@ -26,7 +33,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     aliases = Column(MutableDict.as_mutable(PickleType))
-    admin = Column(String, default=False)
+    flags = Column(MutableDict.as_mutable(PickleType), default=USER_FLAGS)
     decks = relationship('Deck')
     deck = relationship('Deck', uselist=False, back_populates='user')
     _password = Column(String)

@@ -30,9 +30,9 @@ def do_tchat(user, msg):
         return
     for u in user.table.users:
         if u is user:
-            user.msg_self("\n&W[&gtable&W] &xYou: &g{}&x".format(msg))
+            user.msg_self("\n&W[&x&gtable&W]&x You: &g{}&x".format(msg))
         else:
-            user.msg_user(u, "\n&W[&gtable&W] &x{}: &g{}&x".format(user.name, msg))
+            user.msg_user(u, "\n&W[&x&gtable&W]&x {}: &g{}&x".format(user.name, msg))
 
 def do_whisper(user, msg):
     args = msg.split()

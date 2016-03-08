@@ -29,7 +29,6 @@ class Mud(object):
         self.ticker = 0
         self.tick = PeriodicExecutor(1, self.do_tick)
         self.tick.start()
-        self.ticks.append((self.test_tick,60*60))
 
 
         print("Checking Room database...")
@@ -57,17 +56,28 @@ class Mud(object):
         else:
             print("Cards exist.")
 
+    def add_tick(self, func, interval, repeat=True):
+        self.ticks.append((func, interval, repeat))
+
     def do_tick(self):
         for tick in self.ticks:
-            func, interval = tick
+            func, interval, repeat = tick
             if self.ticker % interval is 0:
                 func()
+                if not repeat:
+                    self.ticks.remove(tick)
         self.ticker += 1
 
     def get_room(self, room_name):
         for room in self.rooms:
             if room.name == room_name:
                 return room
+        return None
+
+    def get_user(self, user_name):
+        for user in self.users:
+            if user.name == user_name:
+                return user
         return None
 
     def get_lobby(self):

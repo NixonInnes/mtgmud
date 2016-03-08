@@ -8,3 +8,7 @@ DATABASE = os.environ.get('DATABASE') or 'sqlite:///' + os.path.join(basedir, 'd
 
 LOBBY_ROOM_NAME = "Lobby"
 LOBBY_ROOM_DESC = "Welcome to MtGMUD!!\nYou are in the lobby area. Type 'help' to get started!"
+
+ADMIN = os.environ.get('ADMIN') or None
+
+BANNED_NAMES = ['admin', 'fuck', 'shit', 'asshole', 'ass', 'nigger']

@@ -1,9 +1,5 @@
 * Add user.listening, and ignored lists, so users can mute channels/players
 
-* Add a mud.models.USER_FLAGS global list
-
-* Add user.flags
-
 * Add function to watch other connected users
     - Add check in user.msg_user to see if there are users in their user.spectator list, and send to that user too
 
@@ -11,3 +7,5 @@
 
 * Add user list of allowed spectators (user.db.id) { if user.db.id in u.spectators }
     - Will need to be saved to the db
+
+* Add timers for tables
