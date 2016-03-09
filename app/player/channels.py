@@ -18,7 +18,7 @@ def do_chat(user, msg):
 
 def do_info(user, msg):
     for u in server.users:
-        user.msg_user(u, "\n&W[&Uchat&W]&x &U{}&x".format(msg))
+        user.msg_user(u, "\n&W[&Uinfo&W]&x &U{}&x".format(msg))
 
 def do_say(user, msg):
     for u in user.room.occupants:
