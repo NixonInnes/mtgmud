@@ -49,6 +49,7 @@ def do_login(user, args):
             db.session.add(dbUser)
             db.session.commit()
             user.load(dbUser)
+            channels.do_info(user, "{} has entered the realm.".format(user.name))
             do_look(user, None)
             user.get_prompt()
             return
@@ -61,6 +62,7 @@ def do_login(user, args):
                     user.msg_self("\nEeek, it looks like you're banned buddy! Bye!")
                     actions['quit'](user, None)
                     return
+                channels.do_info(user, "{} has entered the realm.".format(user.name))
                 do_look(user, None)
                 user.get_prompt()
                 return
@@ -74,6 +76,7 @@ def do_quit(user, args):
     Closes the user connection.
     """
     user.msg_self("\nYou are wracked with uncontrollable pain as you are extracted from the Matrix.\n")
+    channels.do_info(user, "{} has left the realm.".format(user.name))
     user.transport.close()
 
 
@@ -454,7 +457,6 @@ def do_deck(user, args):
                 user.deck.cards[card] -= num_cards
                 if user.deck.cards[card] < 1:
                     user.deck.cards.pop(card, None)
-                user.deck.cards['total'] -= 1
                 db.session.commit()
                 user.msg_self("\nRemoved {} x '{}' from '{}'.".format(num_cards, s_card.name, user.deck.name))
                 return

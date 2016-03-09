@@ -11,11 +11,14 @@ def do_action(user, msg_self, msg_others):
 # User channels
 def do_chat(user, msg):
     for u in server.users:
-        if u.authd:
-            if u is user:
-                user.msg_self("\n&W[&Gchat&W] &xYou: &G{}&x".format(msg))
-            else:
-                user.msg_user(u, "\n&W[&Gchat&W] &x{}: &G{}&x".format(user.name, msg))
+        if u is user:
+            user.msg_self("\n&W[&Gchat&W] &xYou: &G{}&x".format(msg))
+        else:
+            user.msg_user(u, "\n&W[&Gchat&W] &x{}: &G{}&x".format(user.name, msg))
+
+def do_info(user, msg):
+    for u in server.users:
+        user.msg_user(u, "\n&W[&Uchat&W]&x &U{}&x".format(msg))
 
 def do_say(user, msg):
     for u in user.room.occupants:
