@@ -63,7 +63,7 @@ class Table(object):
         self.battlefields.pop(user)
         self.life_totals.pop(user)
         self.poison_counters.pop(user)
-        self.users.pop(user)
+        self.users.remove(user)
 
     def stack(self, user):
         user.table.libraries[user].clear()
