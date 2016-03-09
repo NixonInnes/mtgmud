@@ -1,57 +1,57 @@
 from textwrap import wrap
 
-FOOTER_80 =        "\n&c||############################################################################||&x"
-BLANK_80 =         "\n&c||                                                                            ||&x"
-ROW_LINE_80 =      "\n&c||============================================================================||&x"
-BLANK_2COL_80=     "\n&c||                                     ||                                     ||&x"
-ROW_LINE_2COL_80 = "\n&c||=====================================||=====================================||&x"
-BLANK_3COL_80 =    "\n&c||                        ||                        ||                        ||&x"
-ROW_LINE_3COL_80 = "\n&c||========================||========================||========================||&x"
+FOOTER_80 =        "&c||############################################################################||&x\r\n"
+BLANK_80 =         "&c||                                                                            ||&x\r\n"
+ROW_LINE_80 =      "&c||============================================================================||&x\r\n"
+BLANK_2COL_80=     "&c||                                     ||                                     ||&x\r\n"
+ROW_LINE_2COL_80 = "&c||=====================================||=====================================||&x\r\n"
+BLANK_3COL_80 =    "&c||                        ||                        ||                        ||&x\r\n"
+ROW_LINE_3COL_80 = "&c||========================||========================||========================||&x\r\n"
 
-FOOTER_40 =        "\n&c||####################################||&x"
-BLANK_40 =         "\n&c||                                    ||&x"
-ROW_LINE_40 =      "\n&c||====================================||&x"
-BLANK_2COL_40 =    "\n&c||                 ||                 ||&x"
-ROW_LINE_2COL_40 = "\n&c||=================||=================||&x"
+FOOTER_40 =        "&c||####################################||&x\r\n"
+BLANK_40 =         "&c||                                    ||&x\r\n"
+ROW_LINE_40 =      "&c||====================================||&x\r\n"
+BLANK_2COL_40 =    "&c||                 ||                 ||&x\r\n"
+ROW_LINE_2COL_40 = "&c||=================||=================||&x\r\n"
 
 def header_80(title):
-    buff = "\n&c||##########################&C[&x &W{:^20}&x &C]&x&c##########################||&x".format(title)
+    buff = "&c||##########################&C[&x &W{:^20}&x &C]&x&c##########################||&x\r\n".format(title)
     buff += BLANK_80
     return buff
 
 def body_80(string, align='center'):
     if align == 'left':
-        buff = "\n&c||&x {:<74} &c||&x".format(string)
+        buff = "&c||&x {:<74} &c||&x\r\n".format(string)
     elif align == 'right':
-        buff = "\n&c||&x {:>74} &c||&x".format(string)
+        buff = "&c||&x {:>74} &c||&x\r\n".format(string)
     else: # center
-        buff = "\n&c||&x {:^74} &c||&x".format(string)
+        buff = "&c||&x {:^74} &c||&x\r\n".format(string)
     return buff
 
 def body_2cols_80(stringA, stringB):
-    buff = "\n&c||&x {:^35} &c||&x {:^35} &c||&x".format(stringA, stringB)
+    buff = "&c||&x {:^35} &c||&x {:^35} &c||&x\r\n".format(stringA, stringB)
     return buff
 
 def body_3cols_80(stringA, stringB, stringC):
-    buff = "\n&c||&x {:^22} &c||&x {:^22} &c||&x {:^22} &c||&x".format(stringA, stringB, stringC)
+    buff = "&c||&x {:^22} &c||&x {:^22} &c||&x {:^22} &c||&x\r\n".format(stringA, stringB, stringC)
     return buff
 
 def header_40(title):
-    buff = "\n&c||###########&C[&x &W{:^10}&x &C]&x&c###########||&x".format(title)
+    buff = "&c||###########&C[&x &W{:^10}&x &C]&x&c###########||&x\r\n".format(title)
     buff += BLANK_40
     return buff
 
 def body_40(string, align='center'):
     if align == 'left':
-        buff = "\n&c||&x {:<34} &c||&x".format(string)
+        buff = "&c||&x {:<34} &c||&x\r\n".format(string)
     elif align == 'right':
-        buff = "\n&c||&x {:>34} &c||&x".format(string)
+        buff = "&c||&x {:>34} &c||&x\r\n".format(string)
     else: # center
-        buff = "\n&c||&x {:^34} &c||&x".format(string)
+        buff = "&c||&x {:^34} &c||&x\r\n".format(string)
     return buff
 
 def body_2cols_40(stringA, stringB):
-    buff = "\n&c||&x {:^14} &c||&x {:^14} &c||&x".format(stringA, stringB)
+    buff = "&c||&x {:^14} &c||&x {:^14} &c||&x\r\n".format(stringA, stringB)
     return buff
 
 def card(card):
@@ -71,36 +71,36 @@ def card(card):
         c_token = "&G"
     else:
         c_token = "&w"
-    buff = "\n"+c_token+"****************************************&x"
-    buff +="\n"+c_token+"*&x {:<29} {:>6} ".format(card.name, str(card.manaCost) if card.manaCost is not None else "")+c_token+"*&x"
-    buff +="\n"+c_token+"****************************************&x"
-    buff +="\n"+c_token+"*&x {:<36} ".format(card.type)+c_token+"*&x"
-    buff += "\n"+c_token+"****************************************&x"
-    buff += "\n"+c_token+"*                                      *&x"
+    buff = ""+c_token+"****************************************&x\r\n"
+    buff +=""+c_token+"*&x {:<29} {:>6} ".format(card.name, str(card.manaCost) if card.manaCost is not None else "")+c_token+"*&x\r\n"
+    buff +=""+c_token+"****************************************&x\r\n"
+    buff +=""+c_token+"*&x {:<36} ".format(card.type)+c_token+"*&x\r\n"
+    buff += ""+c_token+"****************************************&x\r\n"
+    buff += ""+c_token+"*                                      *&x\r\n"
     if card.text is not None:
         textbox = wrap(card.text, width=36)
         for line in textbox:
-            buff += "\n"+c_token+"*&x {:<36} ".format(line)+c_token+"*&x"
+            buff += ""+c_token+"*&x {:<36} ".format(line)+c_token+"*&x\r\n"
     if card.power is not None:
-        buff += "\n"+c_token+"*&x                              {:^3}/{:^3} ".format(str(card.power), str(card.toughness))+c_token+"*&x"
+        buff += ""+c_token+"*&x                              {:^3}/{:^3} ".format(str(card.power), str(card.toughness))+c_token+"*&x\r\n"
     elif card.loyalty is not None:
-        buff += "\n"+c_token+"*&x                                   {:^3} ".format(str(card.loyalty))+c_token+"*&x"
+        buff += ""+c_token+"*&x                                   {:^3} ".format(str(card.loyalty))+c_token+"*&x\r\n"
     else:
-        buff += "\n"+c_token+"*                                      *&x"
-    buff += "\n"+c_token+"****************************************&x"
+        buff += ""+c_token+"*                                      *&x\r\n"
+    buff += ""+c_token+"****************************************&x\r\n"
     return buff
 
 def room_name(name):
-    buff = "\n&y.-~~~~~~~~~~~~~~~~~~~~~~~~~~&Y{{&W {:^20} &Y}}&x&y~~~~~~~~~~~~~~~~~~~~~~~~~~-.&x".format(name)
+    buff = "&y.-~~~~~~~~~~~~~~~~~~~~~~~~~~&Y{{&W {:^20} &Y}}&x&y~~~~~~~~~~~~~~~~~~~~~~~~~~-.&x\r\n".format(name)
     return buff
 
 def room_desc(desc):
     buff = ""
-    buff += "\n&y:                                                                              &y:&x"
+    buff += "&y:                                                                              &y:&x\r\n"
     desc = wrap(desc, width=72)
     for line in desc:
-        buff += "\n&y:&x   {:<72}   &y:&x".format(line)
-    buff += "\n&y:                                                                              &y:&x"
+        buff += "&y:&x   {:<72}   &y:&x\r\n".format(line)
+    buff += "&y:                                                                              &y:&x\r\n"
     return buff
 
 def room_occupants(occs):
@@ -108,25 +108,25 @@ def room_occupants(occs):
     occs = ', '.join(occs)
     occs = wrap(occs, width=76)
     for line in occs:
-        buff += "\n&Y#[&x {:<74} &Y]#&x".format(line)
+        buff += "&Y#[&x {:<74} &Y]#&x\r\n".format(line)
     return buff
 
 def table_header(name):
-    buff = "\n&g===========================&G[[&W {:^20} &G]]&g===========================&x".format(name)
+    buff = "&g===========================&G[[&W {:^20} &G]]&g===========================&x\r\n".format(name)
     return buff
 
 def table_user(name):
-    buff = "&G|&x&g++++&w {:^28} &g++++&G|&x".format(name)
+    buff = "&G|&x&g++++&w {:^28} &g++++&G|&x\r\n".format(name)
     return buff
 
 def table_user_stats(life, hand, library, graveyard, poison=None):
-    buff ="&G|&x&g+++&x &RLi&x:&R{:^3}&x &GH&x:&G{:^3}&x &YL&x:&Y{:^3}&x &yG&x:&y{:^3}&x {:^5} &g+++&x&G|&x".format(life, hand, library, graveyard, "&MP&x:&M{:^3}&x".format(poison) if poison is not None else "")
+    buff ="&G|&x&g+++&x &RLi&x:&R{:^3}&x &GH&x:&G{:^3}&x &YL&x:&Y{:^3}&x &yG&x:&y{:^3}&x {:^5} &g+++&x&G|&x\r\n".format(life, hand, library, graveyard, "&MP&x:&M{:^3}&x".format(poison) if poison is not None else "")
     return buff
 
 def table_card(index, card):
-    buff = "&G|&x ({:2}) [{:1}] {:<27} &G|&x".format(index, "T" if card.tapped else "", card.name)
+    buff = "&G|&x ({:2}) [{:1}] {:<27} &G|&x\r\n".format(index, "T" if card.tapped else "", card.name)
     return buff
 
 def table_card_blank():
-    buff = "&G|                                      |&x"
+    buff = "&G|                                      |&x\r\n"
     return buff

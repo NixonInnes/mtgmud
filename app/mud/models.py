@@ -43,7 +43,7 @@ class Table(object):
 
     def round_timer(self):
         for user in self.users:
-            user.msg_self("\n&W[&x&gtable&x&W]&x &g50 minutes has elapsed.&w")
+            user.msg_self("&W[&x&gtable&x&W]&x &g50 minutes has elapsed.&w\r\n")
 
     def join(self, user):
         self.users.append(user)

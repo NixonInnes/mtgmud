@@ -30,7 +30,6 @@ class Mud(object):
         self.tick = PeriodicExecutor(1, self.do_tick)
         self.tick.start()
 
-
         print("Checking Room database...")
         if db.session.query(db_models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first() is None:
             print("No lobby found, creating...")
@@ -85,10 +84,6 @@ class Mud(object):
             if room.name == config.LOBBY_ROOM_NAME:
                 return room
         return None
-
-    def test_tick(self):
-        for user in self.users:
-            user.msg_self("\n&W[&RANNOUNCEMENT&W]&x Ding-dong. Another hour has gone by...")
 
     @staticmethod
     def update_cards():
