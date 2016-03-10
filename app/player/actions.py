@@ -244,29 +244,6 @@ def do_ban(user, args):
             return
     user.msg_self("Could not find user '{}'.\r\n".format(username))
 
-
-def do_dice(user, args):
-    """
-    Simulates a dice roll, and sends results to users on the initiating users table.
-
-    :param user: server.Protocol()
-    :param args: Dice size
-    :return: None
-    """
-    if user.table is None:
-        do_help(user, ['dice'])
-        return
-
-    if args is not None:
-        if str(args[0]).isdigit():
-            die_size = int(args[0])
-        else:
-            do_help(user, ['dice'])
-    else:
-        die_size = 6 #Default dice size
-    channels.do_action(user, "rolled a {} on a {} sided dice.".format(randint(1, die_size), die_size), "rolled a {} on a {} sided dice.".format(randint(1, die_size), die_size))
-
-
 def do_card(user, args):
     """
     Queries the card database, and sends results to the user.
@@ -504,10 +481,11 @@ def do_table(user, args):
             return
         table_name = mud.colour.strip(' '.join(args))
         table_ = mud.models.Table(user, table_name)
-        table_.start_time = int(server.ticker)
+        table_.start_time = int(server.tick_count)
         server.add_tick(table_.round_timer, table_.start_time+50*60, repeat=False)
         server.tables.append(table_)
         user.room.tables.append(table_)
+        channels.do_act(user, "created table: {}.".format(table_.name), "created table: {}.".format(table_.name))
         do_table(user, ['join', table_name])
 
     def join(args):
@@ -520,16 +498,32 @@ def do_table(user, args):
                 if len(t.users) < 2 or user in t.users:
                     t.join(user)
                     user.table = t
-                    channels.do_action(user, "joined table {}.".format(t.name), "joined the table.")
+                    channels.do_tinfo(user, "joined table {}.".format(t.name), "joined the table.")
                     return
         user.msg_self("Could not find table '{}'.\r\n".format(table_name))
+
+    def dice(args):
+        if user.table is None:
+            do_help(user, ['table', 'dice'])
+            return
+        if args is not None:
+            if str(args[0]).isdigit():
+                die_size = int(args[0])
+            else:
+                do_help(user, ['table', 'dice'])
+        else:
+            die_size = 6 #Default dice size
+        channels.do_tinfo(user, "rolled a {} on a {} sided dice.".format(randint(1, die_size), die_size), "rolled a {} on a {} sided dice.".format(randint(1, die_size), die_size))
 
     def leave(args):
         if user.table is None:
             user.msg_self("You're not at a table!\r\n")
             return
-        user.table.leave(user)
-        channels.do_action(user, "left the table.", "left the table.")
+        table = user.table
+        table.leave(user)
+        channels.do_tinfo(user, "left the table.", "left the table.")
+        if len(table.users) < 1:
+            del table
 
     def stack(args):
         if user.table is None or user.deck is None:
@@ -537,7 +531,7 @@ def do_table(user, args):
             return
         user.table.stack(user)
         user.table.shuffle(user)
-        channels.do_action(user, "stacked your library.", "stacked their library.")
+        channels.do_tinfo(user, "stacked your library.", "stacked their library.")
 
     def life(args):
         if user.table is None:
@@ -550,7 +544,7 @@ def do_table(user, args):
             do_help(user, ['table', 'hp'])
             return
         user.table.life_totals[user] += int(args[0])
-        channels.do_action(user, "set your life total to {}.".format(user.table.life_totals[user]), "set their life total to {}.".format(user.table.life_totals[user]))
+        channels.do_tinfo(user, "set your life total to {}.".format(user.table.life_totals[user]), "set their life total to {}.".format(user.table.life_totals[user]))
 
     def draw(args):
         if user.table is None:
@@ -561,7 +555,7 @@ def do_table(user, args):
             return
         if args is None:
             user.table.draw(user)
-            channels.do_action(user, "draw a card.", "draws a card.")
+            channels.do_tinfo(user, "draw a card.", "draws a card.")
             return
         if not is_int(args[0]):
             do_help(user, ['table', 'draw'])
@@ -571,7 +565,7 @@ def do_table(user, args):
             user.msg_self("Ummm... how would you even... Uhh... I don't... No. Just, no.\r\n")
             return
         user.table.draw(user, no_cards)
-        channels.do_action(user, "draw {} cards.".format(no_cards), "draws {} cards.".format(no_cards))
+        channels.do_tinfo(user, "draw {} cards.".format(no_cards), "draws {} cards.".format(no_cards))
 
     def hand(args):
         if user.table is None:
@@ -591,7 +585,21 @@ def do_table(user, args):
             user.msg_self("\nOut of range!")
         card = table.hands[user][int(args[0])]
         table.play(user, card)
-        channels.do_action(user, "play {}.".format(card.name), "plays {}.".format(card.name))
+        channels.do_tinfo(user, "play {}.".format(card.name), "plays {}.".format(card.name))
+
+    def discard(args):
+        if user.table is None:
+            user.msg_self("You're not at a table!\r\n")
+            return
+        table = user.table
+        if not is_int(args[0]):
+            do_help(user, ['table', 'play'])
+        card_index = int(args[0])
+        if card_index >= len(table.hands[user]):
+            user.msg_self("\nOut of range!")
+        card = table.hands[user][int(args[0])]
+        table.discard(user, card)
+        channels.do_tinfo(user, "discard {}.".format(card.name), "discards {}.".format(card.name))
 
     def tap(args):
         if user.table is None:
@@ -611,11 +619,11 @@ def do_table(user, args):
                 user.msg_self("{} is already tapped.\r\n".format(card.name))
                 return
             card.tap()
-            channels.do_action(user, "tap {}.".format(card.name), "taps {}.".format(card.name))
+            channels.do_tinfo(user, "tap {}.".format(card.name), "taps {}.".format(card.name))
         elif args[0] is "all":
             for card in table.battlefields[user]:
                 card.tap()
-            channels.do_action(user, "tap all your cards.", "taps all their cards.")
+            channels.do_tinfo(user, "tap all your cards.", "taps all their cards.")
         else:
             do_help(user, ['table', 'tap'])
 
@@ -637,11 +645,11 @@ def do_table(user, args):
                 user.msg_self("'{}' is not tapped.\r\n".format(card.name))
                 return
             card.untap()
-            channels.do_action(user, "untap {}.".format(card.name), "untaps {}.".format(card.name))
+            channels.do_tinfo(user, "untap {}.".format(card.name), "untaps {}.".format(card.name))
         elif args[0] is "all":
             for card in table.battlefields[user]:
                 card.untap()
-            channels.do_action(user, "untap all your cards.", "untaps all their cards.")
+            channels.do_tinfo(user, "untap all your cards.", "untaps all their cards.")
         else:
             do_help(user, ['table', 'tap'])
 
@@ -650,7 +658,7 @@ def do_table(user, args):
             user.msg_self("You're not at a table!\r\n")
             return
         user.table.shuffle(user)
-        channels.do_action(user, "shuffled your library.", "shuffled their library.")
+        channels.do_tinfo(user, "shuffled your library.", "shuffled their library.")
 
     def tutor(args):
         if user.table is None:
@@ -661,7 +669,7 @@ def do_table(user, args):
             return
         card_name = ' '.join(args)
         if user.table.tutor(user, card_name):
-            channels.do_action(user, "tutored {} from your library.".format(card_name), "tutored {} from their library.".format(user.name, card_name))
+            channels.do_tinfo(user, "tutored {} from your library.".format(card_name), "tutored {} from their library.".format(user.name, card_name))
         else:
             user.msg_self("Failed to find '{}' in your library.\r\n".format(card_name))
 
@@ -679,7 +687,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.destroy(user, card)
-        channels.do_action(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
+        channels.do_tinfo(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
 
     def return_(args):
         if user.table is None:
@@ -695,7 +703,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.return_(user, card)
-        channels.do_action(user, "return {} to your hand.".format(card.name), "returns {} to their hand.".format(card.name))
+        channels.do_tinfo(user, "return {} to your hand.".format(card.name), "returns {} to their hand.".format(card.name))
 
     def greturn(args):
         if user.table is None:
@@ -711,7 +719,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][int(args[0])]
         table.greturn(user, card)
-        channels.do_action(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
+        channels.do_tinfo(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
 
     def unearth(args):
         if user.table is None:
@@ -727,7 +735,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][card_index]
         table.unearth(user, card)
-        channels.do_action(user, "unearth your {}.".format(card.name), "unearths their {}.".format(card.name))
+        channels.do_tinfo(user, "unearth your {}.".format(card.name), "unearths their {}.".format(card.name))
 
     def exile(args):
         if user.table is None:
@@ -743,7 +751,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.exile(user, card)
-        channels.do_action(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
+        channels.do_tinfo(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
 
     def grexile(args):
         if user.table is None:
@@ -759,14 +767,14 @@ def do_table(user, args):
             return
         card = table.graveyards[user][card_index]
         table.grexile(user, card)
-        channels.do_action(user, "exile {} from your graveyard.".format(card.name), "exiles {} from their graveyard.".format(card.name))
+        channels.do_tinfo(user, "exile {} from your graveyard.".format(card.name), "exiles {} from their graveyard.".format(card.name))
 
     def scoop(args):
         if user.table is None:
             user.msg_self("You're not at a table!\r\n")
             return
         user.table.scoop(user)
-        channels.do_action(user, "scoop it up!", "scoops it up!")
+        channels.do_tinfo(user, "scoop it up!", "scoops it up!")
 
     def time(args):
         if user.table is None:
@@ -779,6 +787,7 @@ def do_table(user, args):
         'create': create,
         'join': join,
         'leave': leave,
+        'dice': dice,
         'stack': stack,
         'draw': draw,
         'life': life,
@@ -787,6 +796,7 @@ def do_table(user, args):
         'play': play,
         'tap': tap,
         'untap': untap,
+        'discard': discard,
         'tutor': tutor,
         'destroy': destroy,
         'return': return_,
@@ -817,7 +827,6 @@ actions = {
     'who':   do_who,
     'help':  do_help,
     'alias': do_alias,
-    'dice':  do_dice,
     'freeze': do_freeze,
     'mute': do_mute,
     'make_admin': do_make_admin,

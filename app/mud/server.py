@@ -5,12 +5,12 @@ from app.db import models as db_models
 from . import models as v_models
 
 # specify a function to be executed with specified params every n seconds.
-class PeriodicExecutor(threading.Thread):
-    def __init__(self,sleep,func):
+class Ticker(threading.Thread):
+    def __init__(self, sleep, func):
         """ execute func() every 'sleep' seconds """
         self.func = func
         self.sleep = sleep
-        threading.Thread.__init__(self,name = "PeriodicExecutor")
+        threading.Thread.__init__(self, name = "Ticker")
         self.setDaemon(True)
     def run(self):
         while 1:
@@ -24,11 +24,11 @@ class Mud(object):
         self.users = []
         self.rooms = []
         self.tables = []
-        # A tick is a list of (function, params, interval)
+        # A tick is a list of (function, interval, repeat?)
         self.ticks = []
-        self.ticker = 0
-        self.tick = PeriodicExecutor(1, self.do_tick)
-        self.tick.start()
+        self.tick_count = 0
+        self.ticker = Ticker(1, self.do_tick)
+        self.ticker.start()
 
         print("Checking Room database...")
         if db.session.query(db_models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first() is None:
@@ -50,7 +50,7 @@ class Mud(object):
 
         print("Checking Card database...")
         if len(db.session.query(db_models.Card).all()) < 1:
-            print("Card database is empty. \nNow populating...")
+            print("Card database is empty. \r\nnNow populating...")
             self.update_cards()
         else:
             print("Cards exist.")
@@ -61,11 +61,11 @@ class Mud(object):
     def do_tick(self):
         for tick in self.ticks:
             func, interval, repeat = tick
-            if self.ticker % interval is 0:
+            if self.tick_count % interval is 0:
                 func()
                 if not repeat:
                     self.ticks.remove(tick)
-        self.ticker += 1
+        self.tick_count += 1
 
     def get_room(self, room_name):
         for room in self.rooms:

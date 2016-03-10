@@ -63,7 +63,7 @@ class User(Protocol):
         self.get_prompt()
 
     def get_prompt(self):
-        buff = "\r\n"
+        buff = ""
         if self.name is not None:
             buff += "&B<&x &c{}&x ".format(self.name)
             if self.deck is not None:
@@ -72,6 +72,12 @@ class User(Protocol):
                 buff += "&B||&x &GH&x:&G{}&x &YL&x:&Y{}&x &yG&x:&y{}&x ".format(len(self.table.hands[self]), len(self.table.libraries[self]), len(self.table.graveyards[self]))
         buff += "&B>&x&w>> &x"
         self.msg_self(buff)
+
+    @staticmethod
+    def msg_user(user, msg):
+        msg = "\r\n"+msg
+        msg = colourify(msg)
+        user.transport.write(msg.encode())
 
     def msg_self(self, msg):
         self.msg_user(self, msg)
@@ -90,11 +96,6 @@ class User(Protocol):
 
     def can_spectate(self):
         return self.flags['allow_spec']
-
-    @staticmethod
-    def msg_user(user, msg):
-        msg = colourify(msg)
-        user.transport.write(msg.encode())
 
     def load(self, dbUser):
         for user in server.users:
