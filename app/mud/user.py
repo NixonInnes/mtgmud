@@ -41,19 +41,19 @@ class User(Protocol):
 
             if msg[0] in channels:
                 if self.is_muted():
-                    self.msg_self("*ZIP* Shhh, you're muted!\r\n")
+                    self.msg_self("*ZIP* Shhh, you're muted!")
                 else:
                     channels[msg[0]](self, msg[1:])
                 self.get_prompt()
                 return
             if args[0] in actions:
                 if self.is_frozen():
-                    self.msg_self("You're frozen solid!\r\n")
+                    self.msg_self("You're frozen solid!")
                 else:
                     actions[args[0]](self, args[1:] if len(args) > 1 else None)
                 self.get_prompt()
                 return
-            self.msg_self("Huh?\r\n")
+            self.msg_self("Huh?")
         else:
             if self.table is not None:
                 actions['table'](self, None)
@@ -100,7 +100,7 @@ class User(Protocol):
     def load(self, dbUser):
         for user in server.users:
             if user.db.id is dbUser.id:
-                self.msg_user(user, "You have signed in from another location!\r\n")
+                self.msg_user(user, "You have signed in from another location!")
                 actions['quit'](user, None)
         self.authd = True
         self.name = str(dbUser.name)

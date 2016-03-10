@@ -19,30 +19,30 @@ def do_login(user, args):
     Function to register or login an existing user.
     """
     if len(args) == 0:
-        user.msg_self("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c\r\n")
+        user.msg_self("&RLogin Error.&x&GLogin:&x &g<username> <password>&x&CRegister:&x &cregister <username> <password> <password>&c")
         user.get_prompt()
         return
 
     if args[0] == 'register':
         if len(args) == 4 and args[2] == args[3]:
             if not re.match('^[\w-]', args[1]):
-                user.msg_self("Invalid username, please only use alphanumerics.\r\n")
+                user.msg_self("Invalid username, please only use alphanumerics.")
                 user.get_prompt()
                 return
             if len(args[1]) < 3:
-                user.msg_self("Username is too short (min. 3).\r\n")
+                user.msg_self("Username is too short (min. 3).")
                 user.get_prompt()
                 return
             if len(args[1]) > 20:
-                user.msg_self("Username is too long (max. 20).\r\n")
+                user.msg_self("Username is too long (max. 20).")
                 user.get_prompt()
                 return
             if str(args[1]).lower() in config.BANNED_NAMES:
-                user.msg_self("That name is banned, sorry!\r\n")
+                user.msg_self("That name is banned, sorry!")
                 user.get_prompt()
                 return
             if db.session.query(db.models.User).filter_by(name=args[1]).first() is not None:
-                user.msg_self("Username '{}' is already taken, sorry.\r\n".format(args[1]))
+                user.msg_self("Username '{}' is already taken, sorry.".format(args[1]))
                 user.get_prompt()
                 return
             dbUser = db.models.User(name=args[1], password=args[2], aliases={})
@@ -59,7 +59,7 @@ def do_login(user, args):
             if dbUser.verify_password(args[1]):
                 user.load(dbUser)
                 if user.is_banned():
-                    user.msg_self("Eeek, it looks like you're banned buddy! Bye!\r\n")
+                    user.msg_self("Eeek, it looks like you're banned buddy! Bye!")
                     actions['quit'](user, None)
                     return
                 channels.do_info(user, "{} has entered the realm.".format(user.name))
@@ -67,7 +67,7 @@ def do_login(user, args):
                 user.get_prompt()
                 return
 
-    user.msg_self("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c\r\n")
+    user.msg_self("&RLogin Error.&x&GLogin:&x &g<username> <password>&x&CRegister:&x &cregister <username> <password> <password>&c")
     user.get_prompt()
 
 
@@ -75,7 +75,7 @@ def do_quit(user, args):
     """
     Closes the user connection.
     """
-    user.msg_self("\r\nYou are wracked with uncontrollable pain as you are extracted from the Matrix.\r\n")
+    user.msg_self("You are wracked with uncontrollable pain as you are extracted from the Matrix.")
     channels.do_info(user, "{} has left the realm.".format(user.name))
     user.transport.close()
 
@@ -85,7 +85,7 @@ def do_look(user, args):
     Sends room information to the user.
     """
     if user.room is None:
-        user.msg_self("Umm... something's gone terribly, terribly wrong!\r\n")
+        user.msg_self("Umm... something's gone terribly, terribly wrong!")
         return
     buff = style.room_name(user.room.name)
     if user.room.description:
@@ -144,16 +144,16 @@ def do_alias(user, args):
     if args[0] == 'delete' and len(args) > 1:
         if args[1] in user.db.aliases:
             user.db.aliases.pop(args[1])
-            user.msg_self("Alias '{}' has been deleted.\r\n".format(args[1]))
+            user.msg_self("Alias '{}' has been deleted.".format(args[1]))
             return
-        user.msg_self("You have no '{}' alias.\r\n".format(args[1]))
+        user.msg_self("You have no '{}' alias.".format(args[1]))
         return
     if args[1] == 'alias':
-        user.msg_self("That's not a good idea...\r\n")
+        user.msg_self("That's not a good idea...")
         return
     user.db.aliases[args[0]] = ' '.join(args[1:])
     db.session.commit()
-    user.msg_self("Alias '{}' for '{}' created.\r\n".format(args[0], ' '.join(args[1:])))
+    user.msg_self("Alias '{}' for '{}' created.".format(args[0], ' '.join(args[1:])))
 
 
 def do_make_admin(user, args):
@@ -161,43 +161,43 @@ def do_make_admin(user, args):
     Set the admin flag for a user.
     """
     if user.name != config.ADMIN:
-        user.msg_self("Huh?\r\n")
+        user.msg_self("Huh?")
         return
     if args is None:
-        user.msg_self("Make who an Admin?\r\n")
+        user.msg_self("Make who an Admin?")
         return
     user_name = args[0]
     u = server.get_user(user_name)
     if u is None:
-        user.msg_self("Could not find user '{}'.\r\n".format(user_name))
+        user.msg_self("Could not find user '{}'.".format(user_name))
         return
     if u.is_admin():
-        user.msg_self("They are already an Admin!\r\n")
+        user.msg_self("They are already an Admin!")
         return
     u.flags['admin'] = True
     u.save()
-    user.msg_client(u, "&RYou have been made an Admin!&x\r\n")
-    user.msg_self("&CYou have admin'd {}.&x\r\n")
+    user.msg_client(u, "&RYou have been made an Admin!&x")
+    user.msg_self("&CYou have admin'd {}.&x")
 
 def do_mute(user, args):
     """
     Set mute flag for a user.
     """
     if not user.is_admin():
-        user.msg_self("Huh?\r\n")
+        user.msg_self("Huh?")
         return
     if args is None:
-        user.msg_self("Mute who?\r\n")
+        user.msg_self("Mute who?")
         return
     user_name = args[0]
     u = server.get_user(user_name)
     if user is None:
-        user.msg_self("Could not find user '{}'.\r\n".format(user_name))
+        user.msg_self("Could not find user '{}'.".format(user_name))
         return
     u.flags['muted'] = True
     u.save()
-    user.msg_client(u, "&RYou have been muted!&x\r\n")
-    user.msg_self("&CYou have muted {}.&x\r\n".format(u.name))
+    user.msg_client(u, "&RYou have been muted!&x")
+    user.msg_self("&CYou have muted {}.&x".format(u.name))
     return
 
 
@@ -206,21 +206,21 @@ def do_freeze(user, args):
     Set frozen flag for a user
     """
     if not user.is_admin():
-        user.msg_self("Huh?\r\n")
+        user.msg_self("Huh?")
         return
     if args is None:
-        user.msg_self("Freeze who?\r\n")
+        user.msg_self("Freeze who?")
         return
     username = args[0]
     for u in server.users:
         if u.name == username:
             u.flags['frozen'] = True
             u.save()
-            user.msg_client(u, "&RYou have been frozen solid!&x\r\n")
-            user.msg_self("&CYou have frozen {}.&x\r\n".format(u.name))
+            user.msg_client(u, "&RYou have been frozen solid!&x")
+            user.msg_self("&CYou have frozen {}.&x".format(u.name))
 
             return
-    user.msg_self("Could not find user '{}'.\r\n".format(username))
+    user.msg_self("Could not find user '{}'.".format(username))
 
 
 def do_ban(user, args):
@@ -228,21 +228,21 @@ def do_ban(user, args):
     Set banned flag for a user
     """
     if not user.is_admin():
-        user.msg_self("Huh?\r\n")
+        user.msg_self("Huh?")
         return
     if args is None:
-        user.msg_self("Ban who?\r\n")
+        user.msg_self("Ban who?")
         return
     username = args[0]
     for u in server.users:
         if u.name == username:
             u.flags['banned'] = True
             u.save()
-            user.msg_client(u, "&RYou have been banned!&x\r\n")
-            user.msg_self("&CYou have banned {}.&x\r\n".format(u.name))
+            user.msg_client(u, "&RYou have been banned!&x")
+            user.msg_self("&CYou have banned {}.&x".format(u.name))
             actions['quit'](u, None)
             return
-    user.msg_self("Could not find user '{}'.\r\n".format(username))
+    user.msg_self("Could not find user '{}'.".format(username))
 
 def do_card(user, args):
     """
@@ -251,7 +251,7 @@ def do_card(user, args):
     card_name = ' '.join(args)
     cards = db.models.Card.search(card_name)
     if len(cards) < 1:
-        user.msg_self("Could not find card: {}\r\n".format(card_name))
+        user.msg_self("Could not find card: {}".format(card_name))
         return
     buff = ""
     for card in cards:
@@ -278,14 +278,14 @@ def do_room(user, args):
         room_name = mud.colour.strip(' '.join(args))
         # Check the database for duplicate name, rather than the server.rooms list, as we may not want to load rooms for some reason later
         if db.session.query(db.models.Room).filter_by(name=room_name).first() is not None:
-            user.msg_self("The room name '{}' is already taken, sorry.\r\n".format(room_name))
+            user.msg_self("The room name '{}' is already taken, sorry.".format(room_name))
             return
         room = db.models.Room(name=str(room_name))
         vroom = mud.models.Room.load(room)
         server.rooms.append(vroom)
         db.session.add(room)
         db.session.commit()
-        user.msg_self("Room created: {}\r\n".format(room_name))
+        user.msg_self("Room created: {}".format(room_name))
 
     def delete(args):
         if args is None:
@@ -298,13 +298,13 @@ def do_room(user, args):
         if room is not None:
             for occupant in room.occupants:
                 do_goto(occupant, config.LOBBY_ROOM_NAME)
-                user.msg_user(occupant, "The lights flicker and you are suddenly in {}. Weird...\r\n".format(config.LOBBY_ROOM_NAME))
+                user.msg_user(occupant, "The lights flicker and you are suddenly in {}. Weird...".format(config.LOBBY_ROOM_NAME))
             server.rooms.remove(room)
             db.session.delete(room.db)
             db.session.commit()
-            user.msg_self("Room '{}' has been deleted.\r\n".format(room.name))
+            user.msg_self("Room '{}' has been deleted.".format(room.name))
             return
-        user.msg_self("Room '{}' was not found.\r\n".format(room_name))
+        user.msg_self("Room '{}' was not found.".format(room_name))
 
     verbs = {
         'create': create,
@@ -322,7 +322,7 @@ def do_room(user, args):
 
 def do_goto(user, args):
     if user.table is not None:
-        user.msg_self("You can't leave now, you're at a table!\r\n")
+        user.msg_self("You can't leave now, you're at a table!")
         return
     if args is None:
         do_help(user, ['goto'])
@@ -330,7 +330,7 @@ def do_goto(user, args):
     room_name = ' '.join(args)
     room = server.get_room(room_name)
     if room is None:
-        user.msg_self("Goto where?!\r\n")
+        user.msg_self("Goto where?!")
         return
     if user.room is not None:
         user.room.occupants.remove(user)
@@ -347,7 +347,7 @@ def do_deck(user, args):
         deck_name = mud.colour.strip(' '.join(args))
         for d in user.decks:
             if d.name == deck_name:
-                user.msg_self("You already have a deck named '{}'.\r\n".format(deck_name))
+                user.msg_self("You already have a deck named '{}'.".format(deck_name))
                 return
         new_deck = db.models.Deck(
             name = deck_name,
@@ -358,7 +358,7 @@ def do_deck(user, args):
         user.decks.append(new_deck)
         db.session.commit()
         user.deck = new_deck
-        user.msg_self("Created new deck '{}'.\r\n".format(new_deck.name))
+        user.msg_self("Created new deck '{}'.".format(new_deck.name))
 
     def set_(args):
         if args is None:
@@ -371,9 +371,9 @@ def do_deck(user, args):
                 db.session.add(user.db)
                 db.session.commit()
                 print(user.deck)
-                user.msg_self("'{}' is now your active deck.\r\n".format(deck.name))
+                user.msg_self("'{}' is now your active deck.".format(deck.name))
                 return
-        user.msg_self("Deck '{}' not found.\r\n".format(deck_name))
+        user.msg_self("Deck '{}' not found.".format(deck_name))
 
     def add(args):
         if args is None:
@@ -390,23 +390,23 @@ def do_deck(user, args):
         card_name = ' '.join(args)
         s_cards = db.models.Card.search(card_name)
         if len(s_cards) is 0:
-            user.msg_self("Card '{}' not found.\r\n".format(card_name))
+            user.msg_self("Card '{}' not found.".format(card_name))
             return
         if len(s_cards) > 1:
-            user.msg_self("Multiple cards called {}: {}\r\nPlease be more specific.\r\n".format(card_name, ', '.join(card.name for card in s_cards)))
+            user.msg_self("Multiple cards called {}: {}Please be more specific.".format(card_name, ', '.join(card.name for card in s_cards)))
             return
         s_card = s_cards[0]
         total_cards = 0
         for card in user.deck.cards:
             total_cards += user.deck.cards[card]
         if total_cards >= 600:
-            user.msg_self("Your deck is at the card limit (600).\r\n")
+            user.msg_self("Your deck is at the card limit (600).")
         if s_card.id in user.deck.cards:
             user.deck.cards[s_card.id] += num_cards
         else:
             user.deck.cards[s_card.id] = num_cards
         db.session.commit()
-        user.msg_self("Added {} x '{}' to '{}'.\r\n".format(num_cards, s_card.name, user.deck.name))
+        user.msg_self("Added {} x '{}' to '{}'.".format(num_cards, s_card.name, user.deck.name))
 
     def remove(args):
         if args is None:
@@ -423,10 +423,10 @@ def do_deck(user, args):
         card_name = ' '.join(args)
         s_cards = db.models.Card.search(card_name)
         if len(s_cards) is 0:
-            user.msg_self("Card '{}' not found.\r\n".format(card_name))
+            user.msg_self("Card '{}' not found.".format(card_name))
             return
         if len(s_cards) > 1:
-            user.msg_self("Multiple cards called {}: {}\r\nPlease be more specific.\r\n".format(card_name, ', '.join(card.name for card in s_cards)))
+            user.msg_self("Multiple cards called {}: {}Please be more specific.".format(card_name, ', '.join(card.name for card in s_cards)))
             return
         s_card = s_cards[0]
         for card in user.deck.cards:
@@ -435,7 +435,7 @@ def do_deck(user, args):
                 if user.deck.cards[card] < 1:
                     user.deck.cards.pop(card, None)
                 db.session.commit()
-                user.msg_self("Removed {} x '{}' from '{}'.\r\n".format(num_cards, s_card.name, user.deck.name))
+                user.msg_self("Removed {} x '{}' from '{}'.".format(num_cards, s_card.name, user.deck.name))
                 return
 
     verbs = {
@@ -485,7 +485,7 @@ def do_table(user, args):
         server.add_tick(table_.round_timer, table_.start_time+50*60, repeat=False)
         server.tables.append(table_)
         user.room.tables.append(table_)
-        channels.do_act(user, "created table: {}.".format(table_.name), "created table: {}.".format(table_.name))
+        channels.do_act(user, "have created a table, '{}'.".format(table_.name), "created a table, '{}'.".format(table_.name))
         do_table(user, ['join', table_name])
 
     def join(args):
@@ -498,9 +498,9 @@ def do_table(user, args):
                 if len(t.users) < 2 or user in t.users:
                     t.join(user)
                     user.table = t
-                    channels.do_tinfo(user, "joined table {}.".format(t.name), "joined the table.")
+                    channels.do_tinfo(user, "joined the table.".format(t.name), "has joined the table.")
                     return
-        user.msg_self("Could not find table '{}'.\r\n".format(table_name))
+        user.msg_self("Could not find table '{}'.".format(table_name))
 
     def dice(args):
         if user.table is None:
@@ -517,11 +517,11 @@ def do_table(user, args):
 
     def leave(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
+        channels.do_tinfo(user, "have left the table.", "has left the table.")
         table.leave(user)
-        channels.do_tinfo(user, "left the table.", "left the table.")
         if len(table.users) < 1:
             del table
 
@@ -535,10 +535,10 @@ def do_table(user, args):
 
     def life(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         if args is None:
-            user.msg_self("\nDo what with your HP?")
+            user.msg_self("Do what with your life total?")
             return
         if not is_int(args[0]):
             do_help(user, ['table', 'hp'])
@@ -548,10 +548,10 @@ def do_table(user, args):
 
     def draw(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         if len(user.table.libraries[user]) < 1:
-            user.msg_self("\nYour library is empty!")
+            user.msg_self("Your library is empty!")
             return
         if args is None:
             user.table.draw(user)
@@ -562,48 +562,48 @@ def do_table(user, args):
             return
         no_cards = int(args[0])
         if no_cards < 1:
-            user.msg_self("Ummm... how would you even... Uhh... I don't... No. Just, no.\r\n")
+            user.msg_self("Ummm... how would you even... Uhh... I don't... No. Just, no.")
             return
         user.table.draw(user, no_cards)
         channels.do_tinfo(user, "draw {} cards.".format(no_cards), "draws {} cards.".format(no_cards))
 
     def hand(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         user.msg_self(user.table.hand(user))
 
     def play(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if not is_int(args[0]):
             do_help(user, ['table', 'play'])
         card_index = int(args[0])
         if card_index >= len(table.hands[user]):
-            user.msg_self("\nOut of range!")
+            user.msg_self("Out of range!")
         card = table.hands[user][int(args[0])]
         table.play(user, card)
         channels.do_tinfo(user, "play {}.".format(card.name), "plays {}.".format(card.name))
 
     def discard(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if not is_int(args[0]):
             do_help(user, ['table', 'play'])
         card_index = int(args[0])
         if card_index >= len(table.hands[user]):
-            user.msg_self("\nOut of range!")
+            user.msg_self("Out of range!")
         card = table.hands[user][int(args[0])]
         table.discard(user, card)
         channels.do_tinfo(user, "discard {}.".format(card.name), "discards {}.".format(card.name))
 
     def tap(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if args is None:
@@ -612,11 +612,11 @@ def do_table(user, args):
         if is_int(args[0]):
             card_index = int(args[0])
             if card_index >= len(table.battlefields[user]):
-                user.msg_self("Out of range!\r\n")
+                user.msg_self("Out of range!")
                 return
             card = table.battlefields[user][card_index]
             if card.tapped:
-                user.msg_self("{} is already tapped.\r\n".format(card.name))
+                user.msg_self("{} is already tapped.".format(card.name))
                 return
             card.tap()
             channels.do_tinfo(user, "tap {}.".format(card.name), "taps {}.".format(card.name))
@@ -629,7 +629,7 @@ def do_table(user, args):
 
     def untap(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if args is None:
@@ -638,11 +638,11 @@ def do_table(user, args):
         if is_int(args[0]):
             card_index = int(args[0])
             if card_index >= len(table.battlefields[user]):
-                user.msg_self("Out of range!\r\n")
+                user.msg_self("Out of range!")
                 return
             card = table.battlefields[user][card_index]
             if not card.tapped:
-                user.msg_self("'{}' is not tapped.\r\n".format(card.name))
+                user.msg_self("'{}' is not tapped.".format(card.name))
                 return
             card.untap()
             channels.do_tinfo(user, "untap {}.".format(card.name), "untaps {}.".format(card.name))
@@ -655,14 +655,14 @@ def do_table(user, args):
 
     def shuffle(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         user.table.shuffle(user)
         channels.do_tinfo(user, "shuffled your library.", "shuffled their library.")
 
     def tutor(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         if args is None:
             do_help(user, ['table', 'tutor'])
@@ -671,11 +671,11 @@ def do_table(user, args):
         if user.table.tutor(user, card_name):
             channels.do_tinfo(user, "tutored {} from your library.".format(card_name), "tutored {} from their library.".format(user.name, card_name))
         else:
-            user.msg_self("Failed to find '{}' in your library.\r\n".format(card_name))
+            user.msg_self("Failed to find '{}' in your library.".format(card_name))
 
     def destroy(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if args is None or not is_int(args[0]):
@@ -683,7 +683,7 @@ def do_table(user, args):
             return
         card_index = int(args[0])
         if card_index >= len(table.battlefields[user]):
-            user.msg_self("\nOut of range!")
+            user.msg_self("Out of range!")
             return
         card = table.battlefields[user][card_index]
         table.destroy(user, card)
@@ -691,7 +691,7 @@ def do_table(user, args):
 
     def return_(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if args is None or not is_int(args[0]):
@@ -699,7 +699,7 @@ def do_table(user, args):
             return
         card_index = int(args[0])
         if card_index >= len(table.battlefields[user]):
-            user.msg_self("Out of range!\r\n")
+            user.msg_self("Out of range!")
             return
         card = table.battlefields[user][card_index]
         table.return_(user, card)
@@ -707,7 +707,7 @@ def do_table(user, args):
 
     def greturn(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if args is None or not is_int(args[0]):
@@ -715,7 +715,7 @@ def do_table(user, args):
             return
         card_index = int(args[0])
         if card_index >= len(table.graveyards[user]):
-            user.msg_self("Out of range!\r\n")
+            user.msg_self("Out of range!")
             return
         card = table.graveyards[user][int(args[0])]
         table.greturn(user, card)
@@ -723,7 +723,7 @@ def do_table(user, args):
 
     def unearth(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if args is None or not is_int(args[0]):
@@ -731,7 +731,7 @@ def do_table(user, args):
             return
         card_index = int(args[0])
         if card_index >= len(table.graveyards[user]):
-            user.msg_self("Out of range!\r\n")
+            user.msg_self("Out of range!")
             return
         card = table.graveyards[user][card_index]
         table.unearth(user, card)
@@ -739,7 +739,7 @@ def do_table(user, args):
 
     def exile(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if args is None or not is_int(args[0]):
@@ -747,7 +747,7 @@ def do_table(user, args):
             return
         card_index = int(args[0])
         if card_index >= len(table.graveyards[user]):
-            user.msg_self("Out of range!\r\n")
+            user.msg_self("Out of range!")
             return
         card = table.battlefields[user][card_index]
         table.exile(user, card)
@@ -755,7 +755,7 @@ def do_table(user, args):
 
     def grexile(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         table = user.table
         if args is None or not is_int(args[0]):
@@ -763,7 +763,7 @@ def do_table(user, args):
             return
         card_index = int(args[0])
         if card_index >= len(table.graveyards[user]):
-            user.msg_self("Out of range!\r\n")
+            user.msg_self("Out of range!")
             return
         card = table.graveyards[user][card_index]
         table.grexile(user, card)
@@ -771,17 +771,17 @@ def do_table(user, args):
 
     def scoop(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         user.table.scoop(user)
         channels.do_tinfo(user, "scoop it up!", "scoops it up!")
 
     def time(args):
         if user.table is None:
-            user.msg_self("You're not at a table!\r\n")
+            user.msg_self("You're not at a table!")
             return
         elapsed = int((server.ticker - user.table.start_time)/60)
-        user.msg_self("{} minutes have elapsed.\r\n".format(elapsed))
+        user.msg_self("{} minutes have elapsed.".format(elapsed))
 
     verbs = {
         'create': create,
