@@ -116,17 +116,17 @@ def table_header(name):
     return buff
 
 def table_user(name):
-    buff = "&G|&x&g++++&w {:^28} &g++++&G|&x\r\n".format(name)
+    buff = "&G|&x&g++++&w {:^28} &g++++&G|&x".format(name)
     return buff
 
 def table_user_stats(life, hand, library, graveyard, poison=None):
-    buff ="&G|&x&g+++&x &RLi&x:&R{:^3}&x &GH&x:&G{:^3}&x &YL&x:&Y{:^3}&x &yG&x:&y{:^3}&x {:^5} &g+++&x&G|&x\r\n".format(life, hand, library, graveyard, "&MP&x:&M{:^3}&x".format(poison) if poison is not None else "")
+    buff ="&G|&x&g+++&x &RLi&x:&R{:^3}&x &GH&x:&G{:^3}&x &YL&x:&Y{:^3}&x &yG&x:&y{:^3}&x {:^5} &g+++&x&G|&x".format(life, hand, library, graveyard, "&MP&x:&M{:^3}&x".format(poison) if poison is not None else "")
     return buff
 
 def table_card(index, card):
-    buff = "&G|&x ({:2}) [{:1}] {:<27} &G|&x\r\n".format(index, "T" if card.tapped else "", card.name)
+    buff = "&G|&x ({:2}) [{:1}] {:<27} &G|&x".format(index, "T" if card.tapped else "", card.name)
     return buff
 
 def table_card_blank():
-    buff = "&G|                                      |&x\r\n"
+    buff = "&G|                                      |&x"
     return buff

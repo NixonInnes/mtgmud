@@ -583,6 +583,7 @@ def do_table(user, args):
         card_index = int(args[0])
         if card_index >= len(table.hands[user]):
             user.msg_self("Out of range!")
+            return
         card = table.hands[user][int(args[0])]
         table.play(user, card)
         channels.do_tinfo(user, "play {}.".format(card.name), "plays {}.".format(card.name))
@@ -597,6 +598,7 @@ def do_table(user, args):
         card_index = int(args[0])
         if card_index >= len(table.hands[user]):
             user.msg_self("Out of range!")
+            return
         card = table.hands[user][int(args[0])]
         table.discard(user, card)
         channels.do_tinfo(user, "discard {}.".format(card.name), "discards {}.".format(card.name))
@@ -620,7 +622,7 @@ def do_table(user, args):
                 return
             card.tap()
             channels.do_tinfo(user, "tap {}.".format(card.name), "taps {}.".format(card.name))
-        elif args[0] is "all":
+        elif args[0] == "all":
             for card in table.battlefields[user]:
                 card.tap()
             channels.do_tinfo(user, "tap all your cards.", "taps all their cards.")
@@ -646,7 +648,7 @@ def do_table(user, args):
                 return
             card.untap()
             channels.do_tinfo(user, "untap {}.".format(card.name), "untaps {}.".format(card.name))
-        elif args[0] is "all":
+        elif args[0] == "all":
             for card in table.battlefields[user]:
                 card.untap()
             channels.do_tinfo(user, "untap all your cards.", "untaps all their cards.")

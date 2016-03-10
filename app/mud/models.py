@@ -111,7 +111,7 @@ class Table(object):
         battlefield_list = list(zip_longest(*user_list))
         for lines in battlefield_list:
             for card in lines:
-                buff += "{}{}".format("\n" if card is lines[0] else "", style.table_card_blank() if card is None else card)
+                buff += "{}{}".format("\r\n" if card is lines[0] else "", style.table_card_blank() if card is None else card)
         return buff
 
     def hand(self, user):
