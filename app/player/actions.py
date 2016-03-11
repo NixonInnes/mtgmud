@@ -523,6 +523,7 @@ def do_table(user, args):
         table = user.table
         channels.do_tinfo(user, "have left the table.", "has left the table.")
         table.leave(user)
+        user.table = None
         if len(table.users) < 1:
             del table
 
