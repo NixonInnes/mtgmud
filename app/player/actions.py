@@ -513,7 +513,8 @@ def do_table(user, args):
                 do_help(user, ['table', 'dice'])
         else:
             die_size = 6 #Default dice size
-        channels.do_tinfo(user, "rolled a {} on a {} sided dice.".format(randint(1, die_size), die_size), "rolled a {} on a {} sided dice.".format(randint(1, die_size), die_size))
+        roll = randint(1, die_size)
+        channels.do_tinfo(user, "rolled a {} on a {} sided dice.".format(roll, die_size), "rolled a {} on a {} sided dice.".format(roll, die_size))
 
     def leave(args):
         if user.table is None:
