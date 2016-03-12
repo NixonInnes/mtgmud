@@ -36,6 +36,7 @@ class User(Base):
     flags = Column(MutableDict.as_mutable(PickleType), default=USER_FLAGS)
     decks = relationship('Deck')
     deck = relationship('Deck', uselist=False, back_populates='user')
+    listening = Column(String)
     _password = Column(String)
 
     @property
@@ -117,6 +118,34 @@ class Deck(Base):
 
     def __repr__(self):
         return "<Deck(name='{}')>".format(self.name)
+
+
+class Channel(Base):
+    __tablename__ = 'channels'
+
+    key = Column(String(1), primary_key=True)
+    name = Column(String)
+    colour_token = Column(String(2))
+    # Channel.types:
+    # 0 - server
+    # 1 - room
+    # 2 - table
+    type = Column(Integer)
+    default = Column(Boolean, default=False)
+
+
+class Emote(Base):
+    __tablename__ = 'emotes'
+    id = Column(Integer, primary_key=True)
+    user_no_vict = Column(String(128))
+    others_no_vict = Column(String(128))
+    user_vict = Column(String(128))
+    others_vict = Column(String(128))
+    vict_vict = Column(String(128))
+    user_vict_self = Column(String(128))
+    others_vict_self = Column(String(128))
+
+
 
 
 Base.metadata.create_all(engine)

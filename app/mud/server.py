@@ -24,6 +24,7 @@ class Mud(object):
         self.users = []
         self.rooms = []
         self.tables = []
+        self.channels = {}
         # A tick is a list of (function, interval, repeat?)
         self.ticks = []
         self.tick_count = 0
@@ -31,29 +32,82 @@ class Mud(object):
         self.ticker.start()
 
         print("Checking Room database...")
-        if db.session.query(db_models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first() is None:
-            print("No lobby found, creating...")
-            lobby = db_models.Room(
-                name=config.LOBBY_ROOM_NAME,
-                description=config.LOBBY_ROOM_DESC
-            )
-            db.session.add(lobby)
-            db.session.commit()
-            print("Lobby created.")
+        if self.get_lobby() is None:
+            print("No lobby found....")
+            self.create_lobby()
+        self.load_rooms()
 
+        print("Checking Card database...")
+        if db.session.query(db_models.Card).count() < 1:
+            print("Card database is empty. \r\nNow populating...")
+            self.update_cards()
+        else:
+            print("Cards exist.")
+
+        print("Checking for channels...")
+        if db.session.query(db_models.Channel).count() < 1:
+            print("No channels found...")
+            self.create_default_channels()
+        else:
+            print("Channels exist.")
+        self.load_channels()
+
+    def create_lobby(self):
+        print("Creating {}...".format(config.LOBBY_ROOM_NAME))
+        lobby = db_models.Room(
+            name=config.LOBBY_ROOM_NAME,
+            description=config.LOBBY_ROOM_DESC
+        )
+        db.session.add(lobby)
+        db.session.commit()
+        print("{} created.".format(lobby.name))
+
+    def load_rooms(self):
         print("Loading rooms...")
+        if self.rooms is not None:
+            print("Cleaning out existing rooms...")
+            for user in self.users:
+                user.room = None
+            self.rooms.clear()
         for i in db.session.query(db_models.Room).all():
             print("Loading room: {}".format(i.name))
             room = v_models.Room.load(i)
             self.rooms.append(room)
         print("Rooms loaded.")
 
-        print("Checking Card database...")
-        if len(db.session.query(db_models.Card).all()) < 1:
-            print("Card database is empty. \r\nnNow populating...")
-            self.update_cards()
-        else:
-            print("Cards exist.")
+    def create_default_channels(self):
+        print("Creating default channels...")
+        chat = db_models.Channel(
+            key = ".",
+            name = "chat",
+            colour_token = "&G",
+            type = 0,
+            default = True
+        )
+        db.session.add(chat)
+        say = db_models.Channel(
+            key = "\'",
+            name = "say",
+            colour_token = "&C",
+            type = 1,
+            default = True
+        )
+        db.session.add(say)
+        db.session.commit()
+        print("Created default channels: {}".format(', '.join([channel.name for channel in db.session.query(db_models.Channel).filter_by(default=True).all()])))
+
+    def load_channels(self):
+        print("Loading channels...")
+        if self.channels is not None:
+            print("Clearing out existing channels...")
+            self.channels.clear()
+        for channel in db.session.query(db_models.Channel).all():
+            print("Loading channel: {}".format(channel.name))
+            self.channels[channel.key] = channel
+        print("Channels loaded.")
+
+    def get_lobby(self):
+        return db.session.query(db_models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first()
 
     def add_tick(self, func, interval, repeat=True):
         self.ticks.append((func, interval, repeat))
