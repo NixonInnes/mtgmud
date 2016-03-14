@@ -16,8 +16,8 @@ class Room(object):
     @staticmethod
     def load(db_room):
         room = Room()
-        room.name = db_room.name
-        room.description = db_room.description
+        room.name = str(db_room.name)
+        room.description = str(db_room.description)
         room.db = db_room
         return room
 

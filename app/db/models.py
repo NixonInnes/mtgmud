@@ -130,6 +130,7 @@ class Channel(Base):
     # 0 - server
     # 1 - room
     # 2 - table
+    # 3 - user (whisper)
     type = Column(Integer)
     default = Column(Boolean, default=False)
 
@@ -137,6 +138,7 @@ class Channel(Base):
 class Emote(Base):
     __tablename__ = 'emotes'
     id = Column(Integer, primary_key=True)
+    name = Column(String(16))
     user_no_vict = Column(String(128))
     others_no_vict = Column(String(128))
     user_vict = Column(String(128))
@@ -144,8 +146,5 @@ class Emote(Base):
     vict_vict = Column(String(128))
     user_vict_self = Column(String(128))
     others_vict_self = Column(String(128))
-
-
-
 
 Base.metadata.create_all(engine)

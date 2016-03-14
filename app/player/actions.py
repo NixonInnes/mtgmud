@@ -19,7 +19,7 @@ def do_login(user, args):
     Function to register or login an existing user.
     """
     if len(args) == 0:
-        user.send_to_self("&RLogin Error.&x&GLogin:&x &g<username> <password>&x&CRegister:&x &cregister <username> <password> <password>&c")
+        user.send_to_self("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c")
         user.get_prompt()
         return
 
@@ -54,7 +54,7 @@ def do_login(user, args):
             db.session.add(dbUser)
             db.session.commit()
             user.load(dbUser)
-            channels.do_info(user, "{} has entered the realm.".format(user.name))
+            channels.do_info("{} has entered the realm.".format(user.name))
             do_look(user, None)
             user.get_prompt()
             return
@@ -67,7 +67,7 @@ def do_login(user, args):
                     user.send_to_self("Eeek, it looks like you're banned buddy! Bye!")
                     actions['quit'](user, None)
                     return
-                channels.do_info(user, "{} has entered the realm.".format(user.name))
+                channels.do_info("{} has entered the realm.".format(user.name))
                 do_look(user, None)
                 user.get_prompt()
                 return
@@ -80,8 +80,8 @@ def do_quit(user, args):
     """
     Closes the user connection.
     """
-    user.send_to_self("You are wracked with uncontrollable pain as you are extracted from the Matrix.")
-    channels.do_info(user, "{} has left the realm.".format(user.name))
+    user.send_to_self("&gYou are wracked with uncontrollable pain as you are extracted from the Matrix.&x")
+    channels.do_info("{} has left the realm.".format(user.name))
     user.transport.close()
 
 
@@ -90,7 +90,7 @@ def do_look(user, args):
     Sends room information to the user.
     """
     if user.room is None:
-        user.send_to_self("Umm... something's gone terribly, terribly wrong!")
+        user.send_to_self("You're floating in a limitless void, flooded with eternal darkness...\r\nPlease 'goto {}'".format(config.LOBBY_ROOM_NAME))
         return
     buff = style.room_name(user.room.name)
     if user.room.description:
@@ -272,7 +272,7 @@ def do_rooms(user, args):
         buff += style.body_2cols_80(room.name, ', '.join(user.name for user in room.occupants))
     buff += style.BLANK_80
     buff += style.FOOTER_80
-    user.msg_self(buff)
+    user.send_to_self(buff)
 
 
 def do_room(user, args):
@@ -280,7 +280,7 @@ def do_room(user, args):
         if args is None:
             do_help(user, ['room'])
             return
-        room_name = mud.colour.strip(' '.join(args))
+        room_name = style.strip_colours(' '.join(args))
         # Check the database for duplicate name, rather than the server.rooms list, as we may not want to load rooms for some reason later
         if db.session.query(db.models.Room).filter_by(name=room_name).first() is not None:
             user.send_to_self("The room name '{}' is already taken, sorry.".format(room_name))
@@ -490,7 +490,6 @@ def do_table(user, args):
         server.add_tick(table_.round_timer, table_.start_time+50*60, repeat=False)
         server.tables.append(table_)
         user.room.tables.append(table_)
-        channels.do_act(user, "have created a table, '{}'.".format(table_.name), "created a table, '{}'.".format(table_.name))
         do_table(user, ['join', table_name])
 
     def join(args):
@@ -503,7 +502,7 @@ def do_table(user, args):
                 if len(t.users) < 2 or user in t.users:
                     t.join(user)
                     user.table = t
-                    channels.do_tinfo(user, "joined the table.".format(t.name), "has joined the table.")
+                    channels.do_tinfo("{} has joined the table.".format(t.name))
                     return
         user.send_to_self("Could not find table '{}'.".format(table_name))
 
@@ -519,15 +518,15 @@ def do_table(user, args):
         else:
             die_size = 6 #Default dice size
         roll = randint(1, die_size)
-        channels.do_tinfo(user, "rolled a {} on a {} sided dice.".format(roll, die_size), "rolled a {} on a {} sided dice.".format(roll, die_size))
+        channels.do_tinfo(user.table, "{} rolled {} on a {} sided dice.".format(user.name, roll, die_size))
 
     def leave(args):
         if user.table is None:
             user.send_to_self("You're not at a table!")
             return
         table = user.table
-        channels.do_tinfo(user, "have left the table.", "has left the table.")
         table.leave(user)
+        channels.do_tinfo(table, "{} has left the table.".format(user.name))
         user.table = None
         if len(table.users) < 1:
             del table
@@ -538,7 +537,7 @@ def do_table(user, args):
             return
         user.table.stack(user)
         user.table.shuffle(user)
-        channels.do_tinfo(user, "stacked your library.", "stacked their library.")
+        channels.do_tinfo(user.table, "stacked your library.", "stacked their library.")
 
     def life(args):
         if user.table is None:

@@ -1,8 +1,8 @@
 from asyncio import Protocol
 
-from .colour import colourify
 from app import db, server, config
 from app.player import actions, channels
+from app.style import colourify
 
 class User(Protocol):
 
@@ -41,16 +41,12 @@ class User(Protocol):
 
             if msg[0] in server.channels:
                 ch = db.session.query(db.models.Channel).get(msg[0])
-                self.send_to_channel(ch, msg[1:])
+                if msg[1] =='@':
+                    channels.send_to_channel(self, ch, msg[2:], do_emote=True)
+                else:
+                    channels.send_to_channel(self, ch, msg[1:])
+                self.get_prompt()
                 return
-
-            # if msg[0] in channels:
-            #     if self.is_muted():
-            #         self.send_to_self("*ZIP* Shhh, you're muted!")
-            #     else:
-            #         channels[msg[0]](self, msg[1:])
-            #     self.get_prompt()
-            #     return
 
             if args[0] in actions:
                 if self.is_frozen():
@@ -90,54 +86,12 @@ class User(Protocol):
         msg = colourify(msg)
         user.transport.write(msg.encode())
 
-    def send_to_channel(self, channel, msg):
-        msg_self = colourify("\r\n&W[&x{}{}&x&W]&x You: {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, msg ))
-        msg_others = colourify("\r\n&W[&x{}{}&x&W]&x {}: {}{}&x".format(channel.colour_token, channel.name, self.name, channel.colour_token, msg ))
-        self.transport.write(msg_self.encode())
-        if channel.type is 0:
-            others = [user for user in server.users if user is not self and channel.key in user.db.listening]
-        elif channel.type is 1:
-            others = [user for user in self.room.occupants if user is not self and channel.key in user.db.listening]
-        elif channel.type is 2:
-            others = [user for user in self.table.users if user is not self and channel.key in user.db.listening]
-        else:
-            others = None
-        for user in others:
-            user.transport.write(msg_others.encode())
-
-    def send_to_server(self, msg_self, msg_others):
-        msg_self = "\r\n" + msg_self
-        msg_others = "\r\n" + msg_others
-        msg_self = colourify(msg_self)
-        msg_others = colourify(msg_others)
-        self.transport.write(msg_self.encode())
-        users = [user for user in server.users if user is not self]
+    @staticmethod
+    def send_to_users(users, msg):
+        msg = "\r\n"+msg
+        msg = colourify(msg)
         for user in users:
-            user.transport.write(msg_others.encode())
-
-    def send_to_room(self, msg_self, msg_others):
-        if self.room is None:
-            raise Exception("No such room")
-        msg_self = "\r\n" + msg_self
-        msg_others = "\r\n" + msg_others
-        msg_self = colourify(msg_self)
-        msg_others = colourify(msg_others)
-        self.transport.write(msg_self.encode())
-        users = [user for user in self.room.occupants if user is not self]
-        for user in users:
-            user.transport.write(msg_others.encode())
-
-    def send_to_table(self, msg_self, msg_others):
-        if self.room is None:
-            raise Exception("No such table")
-        msg_self = "\r\n" + msg_self
-        msg_others = "\r\n" + msg_others
-        msg_self = colourify(msg_self)
-        msg_others = colourify(msg_others)
-        self.transport.write(msg_self.encode())
-        users = [user for user in self.table.users if user is not self]
-        for user in users:
-            user.transport.write(msg_others.encode())
+            user.transport.write(msg.encode())
 
     def is_admin(self):
         return self.flags['admin']
@@ -166,7 +120,7 @@ class User(Protocol):
         self.decks = dbUser.decks
         self.db = dbUser
         server.users.append(self)
-        lobby = server.get_lobby()
+        lobby = server.get_room(config.LOBBY_ROOM_NAME)
         self.room = lobby
         lobby.occupants.append(self)
 
@@ -187,3 +141,4 @@ class User(Protocol):
             self.save()
             server.users.remove(self)
             self.room.occupants.remove(self)
+

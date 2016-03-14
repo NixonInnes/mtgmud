@@ -32,7 +32,7 @@ class Mud(object):
         self.ticker.start()
 
         print("Checking Room database...")
-        if self.get_lobby() is None:
+        if db.session.query(db_models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first() is None:
             print("No lobby found....")
             self.create_lobby()
         self.load_rooms()
@@ -40,7 +40,7 @@ class Mud(object):
         print("Checking Card database...")
         if db.session.query(db_models.Card).count() < 1:
             print("Card database is empty. \r\nNow populating...")
-            self.update_cards()
+            self.create_cards()
         else:
             print("Cards exist.")
 
@@ -52,7 +52,15 @@ class Mud(object):
             print("Channels exist.")
         self.load_channels()
 
-    def create_lobby(self):
+        print("Checking for emotes...")
+        if db.session.query(db_models.Emote).count() < 1:
+            print("No emotes found...")
+            self.create_default_emotes()
+        else:
+            print("Emotes exist.")
+
+    @staticmethod
+    def create_lobby():
         print("Creating {}...".format(config.LOBBY_ROOM_NAME))
         lobby = db_models.Room(
             name=config.LOBBY_ROOM_NAME,
@@ -75,27 +83,6 @@ class Mud(object):
             self.rooms.append(room)
         print("Rooms loaded.")
 
-    def create_default_channels(self):
-        print("Creating default channels...")
-        chat = db_models.Channel(
-            key = ".",
-            name = "chat",
-            colour_token = "&G",
-            type = 0,
-            default = True
-        )
-        db.session.add(chat)
-        say = db_models.Channel(
-            key = "\'",
-            name = "say",
-            colour_token = "&C",
-            type = 1,
-            default = True
-        )
-        db.session.add(say)
-        db.session.commit()
-        print("Created default channels: {}".format(', '.join([channel.name for channel in db.session.query(db_models.Channel).filter_by(default=True).all()])))
-
     def load_channels(self):
         print("Loading channels...")
         if self.channels is not None:
@@ -105,9 +92,6 @@ class Mud(object):
             print("Loading channel: {}".format(channel.name))
             self.channels[channel.key] = channel
         print("Channels loaded.")
-
-    def get_lobby(self):
-        return db.session.query(db_models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first()
 
     def add_tick(self, func, interval, repeat=True):
         self.ticks.append((func, interval, repeat))
@@ -133,14 +117,62 @@ class Mud(object):
                 return user
         return None
 
-    def get_lobby(self):
-        for room in self.rooms:
-            if room.name == config.LOBBY_ROOM_NAME:
-                return room
-        return None
+    @staticmethod
+    def create_default_channels():
+        print("Creating default channels...")
+        chat = db_models.Channel(
+            key = ".",
+            name = "chat",
+            colour_token = "&G",
+            type = 0,
+            default = True
+        )
+        db.session.add(chat)
+        say = db_models.Channel(
+            key = "\'",
+            name = "say",
+            colour_token = "&C",
+            type = 1,
+            default = True
+        )
+        db.session.add(say)
+        tchat = db_models.Channel(
+            key = ";",
+            name = "tchat",
+            colour_token = "$y",
+            type = 2,
+            default = True
+        )
+        db.session.add(tchat)
+        whisper = db_models.Channel(
+            key = ">",
+            name = "whisper",
+            colour_token = "&M",
+            type = 3,
+            default = True
+        )
+        db.session.add(whisper)
+        db.session.commit()
+        print("Created default channels: {}".format(', '.join([channel.name for channel in db.session.query(db_models.Channel).filter_by(default=True).all()])))
 
     @staticmethod
-    def update_cards():
+    def create_default_emotes():
+        print("Creating default emotes...")
+        laugh = db_models.Emote(
+            name = 'laugh',
+            user_no_vict = 'You laugh.',
+            others_no_vict = '{user} laughs.',
+            user_vict = 'You laugh at {vict} mercilessly.',
+            others_vict = '{user} laughs at {vict} mercilessly.',
+            vict_vict = '{user} laughs at you mercilessly. Hmmmmph.',
+            user_vict_self = 'You laugh at yourself. I would, too.',
+            others_vict_self = '{user} laughs at themself. Lets all join in!!!'
+        )
+        db.session.add(laugh)
+        db.session.commit()
+
+    @staticmethod
+    def create_cards():
         cards = requests.get('http://mtgjson.com/json/AllCards.json').json()
         for c in cards:
             card = db_models.Card(

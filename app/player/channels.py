@@ -1,49 +1,104 @@
 from app import server
+from app import db
+
+def send_to_server(msg):
+    for u in server.users:
+        u.send_to_self(msg)
+
+def send_to_room(room, msg):
+    for user in room.occupants:
+        user.send_to_self(msg)
+
+def send_to_table(table, msg):
+    for user in table.users:
+        user.send_to_self(msg)
 
 # Non-User channels
-def do_info(user, msg):
-    user.send_to_server("&W[&Uinfo&W]&x &U{}&x".format(msg), "&W[&Uinfo&W]&x &U{}&x".format(msg))
+def do_info(msg):
+    send_to_server("&W[&Uinfo&x&W]&x &U{}&x".format(msg))
 
-def do_tinfo(user, msg_self, msg_others):
-    user.send_to_table("&W[&Ytable&W] &YYou {}&x".format(msg_self), "&W[&Ytable&W] &Y{} {}&x".format(user.name, msg_others))
+def do_tinfo(table, msg):
+    send_to_table(table, "&W[&Ytable&x&W]&x &Y{}&x".format(msg))
 
-def do_act(user, msg_self, msg_others):
-    user.send_to_room("&cYou {}&x".format(msg_self), "&c{} {}&x".format(user.name, msg_others))
+def do_rinfo(room, msg):
+    send_to_room(room, "&W[&croom&x&W]&x &c{}&x".format(msg))
 
 # User channels
-def do_chat(user, msg):
-    user.send_to_users("&W[&Gchat&W] &xYou: &G{}&x".format(msg), "&W[&Gchat&W] &x{}: &G{}&x".format(user.name, msg))
-
-def do_say(user, msg):
-    user.send_to_self("&W[&Csay&W] &xYou: &C{}&x".format(msg))
-    others = [u for u in user.room.occupants if u is not user]
-    for u in others:
-        user.send_to_user(u, "&W[&Csay&W] &x{}: &C{}&x".format(user.name, msg))
-
-def do_tchat(user, msg):
-    if user.table is None:
-        user.send_to_self("You are not at a table.")
-        return
-    user.send_to_self("&W[&x&gtchat&W]&x You: &g{}&x".format(msg))
-    others = [u for u in user.table.users if u is not user]
-    for u in others:
-        user.send_to_user(u, "&W[&x&gtchat&W]&x {}: &g{}&x".format(user.name, msg))
-
-def do_whisper(user, msg):
+def send_to_channel(user, channel, msg, do_emote=False):
     args = msg.split()
-    recip = args[0]
-    msg = ' '.join(args[1:])
-    recip = server.get_user(recip)
-    if recip is None:
-        user.send_to_self("Could not find user {}.".format(args[0]))
-        return
-    user.send_to_self("&W[&Mwhisper&W] &xYou: &M{}&x".format(msg))
-    user.send_to_user(recip, "&W[&Mwhisper&W] &x{}: &M{}&x".format(user.name, msg))
+
+    if channel.type is 0:
+        user_list = server.users
+    if channel.type is 1:
+        user_list = user.room.occupants
+    if channel.type is 2:
+        user_list = user.table.users
+    if channel.type is 3:
+        user_list = [server.get_user(args[0])]
+        args = args[1:]
+        msg = ' '.join(args)
+        if msg[0] is '@':
+            do_emote = True
+            msg = msg[1:]
+            args = msg.split()
+
+    if do_emote:
+        if len(args) > 1:
+            if args[1] == "self":
+                vict = user
+            else:
+                vict = None
+                for u in user_list:
+                    if u.name == args[1]:
+                        vict = u
+            if vict is None:
+                user.send_to_self("{} appears not to be here...".format(args[1]))
+                return
+        else:
+            vict = None
+        emote = get_emote(user, args[0], vict)
+        if emote is None:
+            user.send_to_self("Emote not found.")
+            return
+
+        if vict is not None and vict is not user:
+            others = [u for u in user_list if u is not user and u is not vict and channel.key in u.db.listening]
+            msg_vict = "&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, emote['vict'])
+        else:
+            others = [u for u in user_list if u is not user and channel.key in u.db.listening]
+        msg_user = "&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, emote['user'])
+        msg_others = "&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, emote['others'])
+    else:
+        others = [u for u in user_list if u is not user and channel.key in u.db.listening]
+        msg_user = "&W[&x{}{}&x&W]&x You{}: {}{}&x".format(channel.colour_token, channel.name, " to {}".format(others[0].name) if channel.type is 3 else "", channel.colour_token, msg)
+        msg_others = "&W[&x{}{}&x&W]&x {}: {}{}&x".format(channel.colour_token, channel.name, user.name, channel.colour_token, msg)
+
+    user.send_to_self(msg_user)
+    if do_emote and vict is not None and vict is not user:
+        user.send_to_user(vict, msg_vict)
+    if others is not None:
+        user.send_to_users(others, msg_others)
 
 
-channels = {
-    '.':  do_chat,
-    '\'': do_say,
-    ':': do_tchat,
-    '>':  do_whisper
-}
+def get_emote(user, emote, vict=None):
+    emote = db.session.query(db.models.Emote).filter_by(name=emote).first()
+    if emote is None:
+        return None
+    if vict is not None:
+        if vict is user:
+            return {
+                'user': emote.user_vict_self.format(user=user.name),
+                'others': emote.others_vict_self.format(user=user.name)
+            }
+
+        else:
+            return {
+                'user': emote.user_vict.format(user=user.name, vict=vict.name),
+                'others': emote.others_vict.format(user=user.name, vict=vict.name),
+                'vict': emote.vict_vict.format(user=user.name)
+            }
+    else:
+        return {
+            'user': emote.user_no_vict.format(user=user.name),
+            'others': emote.others_no_vict.format(user=user.name)
+        }
