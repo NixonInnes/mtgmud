@@ -1,4 +1,4 @@
-import requests, threading, time
+import requests, threading, time, json, os
 
 from app import db, config
 from app.db import models as db_models
@@ -158,17 +158,21 @@ class Mud(object):
     @staticmethod
     def create_default_emotes():
         print("Creating default emotes...")
-        laugh = db_models.Emote(
-            name = 'laugh',
-            user_no_vict = 'You laugh.',
-            others_no_vict = '{user} laughs.',
-            user_vict = 'You laugh at {vict} mercilessly.',
-            others_vict = '{user} laughs at {vict} mercilessly.',
-            vict_vict = '{user} laughs at you mercilessly. Hmmmmph.',
-            user_vict_self = 'You laugh at yourself. I would, too.',
-            others_vict_self = '{user} laughs at themself. Lets all join in!!!'
-        )
-        db.session.add(laugh)
+        with open('app/player/emotes.json') as emotes_json:
+            emotes = json.load(emotes_json)
+        for e in emotes:
+            print("Adding emote: {}".format(e))
+            emote = db_models.Emote(
+                name = emotes[e]['name'],
+                user_no_vict = emotes[e]['user_no_vict'],
+                others_no_vict = emotes[e]['others_no_vict'] if 'others_no_vict' in emotes[e] else None,
+                user_vict = emotes[e]['user_vict'] if 'user_vict' in emotes[e] else None,
+                others_vict = emotes[e]['others_vict'] if 'others_vict' in emotes[e] else None,
+                vict_vict = emotes[e]['vict_vict'] if 'vict_vict' in emotes[e] else None,
+                user_vict_self = emotes[e]['user_vict_self'] if 'user_vict_self' in emotes[e] else None,
+                others_vict_self = emotes[e]['others_vict_self'] if 'others_vict_self' in emotes[e] else None
+            )
+            db.session.add(emote)
         db.session.commit()
 
     @staticmethod

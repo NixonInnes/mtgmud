@@ -6,10 +6,4 @@
 * Add user list of allowed spectators (user.db.id) { if user.db.id in u.spectators }
     - Will need to be saved to the db
 
-* new lines on windows systems are kinda borked
-
-* maybe move all carriage returns to end of line, so typing isn't all wonky
-
 * check for empty chats
-
-*

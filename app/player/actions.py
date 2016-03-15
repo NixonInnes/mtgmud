@@ -72,7 +72,7 @@ def do_login(user, args):
                 user.get_prompt()
                 return
 
-    user.send_to_self("&RLogin Error.&x&GLogin:&x &g<username> <password>&x&CRegister:&x &cregister <username> <password> <password>&c")
+    user.send_to_self("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c")
     user.get_prompt()
 
 

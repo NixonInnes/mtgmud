@@ -65,9 +65,9 @@ def send_to_channel(user, channel, msg, do_emote=False):
             others = [u for u in user_list if u is not user and u is not vict and channel.key in u.db.listening]
             msg_vict = "&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, emote['vict'])
         else:
-            others = [u for u in user_list if u is not user and channel.key in u.db.listening]
+            others = [u for u in user_list if u is not user and channel.key in u.db.listening] if emote['others'] is not None else None
         msg_user = "&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, emote['user'])
-        msg_others = "&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, emote['others'])
+        msg_others = "&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, emote['others']) if emote['others'] is not None else None
     else:
         others = [u for u in user_list if u is not user and channel.key in u.db.listening]
         msg_user = "&W[&x{}{}&x&W]&x You{}: {}{}&x".format(channel.colour_token, channel.name, " to {}".format(others[0].name) if channel.type is 3 else "", channel.colour_token, msg)
@@ -87,18 +87,18 @@ def get_emote(user, emote, vict=None):
     if vict is not None:
         if vict is user:
             return {
-                'user': emote.user_vict_self.format(user=user.name),
-                'others': emote.others_vict_self.format(user=user.name)
+                'user': emote.user_vict_self.format(user=user.name) if emote.user_vict_self is not None else emote.user_no_vict.format(user=user.name),
+                'others': emote.others_vict_self.format(user=user.name) if emote.others_vict_self is not None else emote.others_no_vict.format(user=user.name)
             }
 
         else:
             return {
-                'user': emote.user_vict.format(user=user.name, vict=vict.name),
-                'others': emote.others_vict.format(user=user.name, vict=vict.name),
+                'user': emote.user_vict.format(user=user.name, vict=vict.name) if emote.user_vict is not None else emote.user_no_vict.format(user=user.name),
+                'others': emote.others_vict.format(user=user.name, vict=vict.name) if emote.others_vict is not None else emote.others_no_vict.format(user=user.name),
                 'vict': emote.vict_vict.format(user=user.name)
             }
     else:
         return {
             'user': emote.user_no_vict.format(user=user.name),
-            'others': emote.others_no_vict.format(user=user.name)
+            'others': emote.others_no_vict.format(user=user.name) if emote.others_no_vict is not None else None
         }
