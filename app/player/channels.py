@@ -95,7 +95,7 @@ def get_emote(user, emote, vict=None):
             return {
                 'user': emote.user_vict.format(user=user.name, vict=vict.name) if emote.user_vict is not None else emote.user_no_vict.format(user=user.name),
                 'others': emote.others_vict.format(user=user.name, vict=vict.name) if emote.others_vict is not None else emote.others_no_vict.format(user=user.name),
-                'vict': emote.vict_vict.format(user=user.name)
+                'vict': emote.vict_vict.format(user=user.name) if emote.vict_vict is not None else None
             }
     else:
         return {
