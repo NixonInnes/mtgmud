@@ -12,6 +12,23 @@ def is_int(s):
     except ValueError:
         return False
 
+#Trying out this decorator malarky... still not convinced, but lets give it a bash; might at least be useful to have later
+class d_user_has(object):
+    def __init__(self, user, attrib, error_msg="Huh?"):
+        self.user = user
+        self.attrib = attrib
+        self.error_msg = error_msg
+
+    def __call__(self, func):
+        def wrapper(*args):
+            if hasattr(self.user, self.attrib) and getattr(self.user, self.attrib) is not None:
+                func(*args)
+            else:
+                self.user.send_to_self(self.error_msg)
+        return wrapper
+
+
+
 #TODO: Tidy up the logic of these functions to be more consistent
 
 def do_login(user, args):
@@ -380,13 +397,14 @@ def do_deck(user, args):
                 return
         user.send_to_self("Deck '{}' not found.".format(deck_name))
 
+    @d_user_has(user, 'deck', "You don't have a deck!")
     def add(args):
         if args is None:
             do_help(user, ['deck'])
             return
-        if user.deck is None:
-            do_help(user, ['deck'])
-            return
+        # if user.deck is None:
+        #     do_help(user, ['deck'])
+        #     return
         if not is_int(args[0]):
             num_cards = 1
         else:
@@ -413,13 +431,14 @@ def do_deck(user, args):
         db.session.commit()
         user.send_to_self("Added {} x '{}' to '{}'.".format(num_cards, s_card.name, user.deck.name))
 
+    @d_user_has(user, 'deck', "You don't have a deck!")
     def remove(args):
         if args is None:
             do_help(user, ['deck'])
             return
-        if user.deck is None:
-            do_help(user, ['deck'])
-            return
+        # if user.deck is None:
+        #     do_help(user, ['deck'])
+        #     return
         if not is_int(args[0]):
             num_cards = 1
         else:
@@ -506,10 +525,11 @@ def do_table(user, args):
                     return
         user.send_to_self("Could not find table '{}'.".format(table_name))
 
+    @d_user_has(user, 'table')
     def dice(args):
-        if user.table is None:
-            do_help(user, ['table', 'dice'])
-            return
+        # if user.table is None:
+        #     do_help(user, ['table', 'dice'])
+        #     return
         if args is not None:
             if str(args[0]).isdigit():
                 die_size = int(args[0])
@@ -520,10 +540,11 @@ def do_table(user, args):
         roll = randint(1, die_size)
         channels.do_tinfo(user.table, "{} rolled {} on a {} sided dice.".format(user.name, roll, die_size))
 
+    @d_user_has(user, 'table')
     def leave(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         table.leave(user)
         channels.do_tinfo(table, "{} has left the table.".format(user.name))
@@ -531,18 +552,20 @@ def do_table(user, args):
         if len(table.users) < 1:
             del table
 
+    @d_user_has(user, 'table')
     def stack(args):
-        if user.table is None or user.deck is None:
-            do_help(user, ['table', 'stack'])
-            return
+        # if user.table is None or user.deck is None:
+        #     do_help(user, ['table', 'stack'])
+        #     return
         user.table.stack(user)
         user.table.shuffle(user)
         channels.do_tinfo(user.table, "stacked your library.", "stacked their library.")
 
+    @d_user_has(user, 'table')
     def life(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         if args is None:
             user.send_to_self("Do what with your life total?")
             return
@@ -552,10 +575,11 @@ def do_table(user, args):
         user.table.life_totals[user] += int(args[0])
         channels.do_tinfo(user, "set your life total to {}.".format(user.table.life_totals[user]), "set their life total to {}.".format(user.table.life_totals[user]))
 
+    @d_user_has(user, 'table')
     def draw(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         if len(user.table.libraries[user]) < 1:
             user.send_to_self("Your library is empty!")
             return
@@ -573,16 +597,18 @@ def do_table(user, args):
         user.table.draw(user, no_cards)
         channels.do_tinfo(user, "draw {} cards.".format(no_cards), "draws {} cards.".format(no_cards))
 
+    @d_user_has(user, 'table')
     def hand(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         user.send_to_self(user.table.hand(user))
 
+    @d_user_has(user, 'table')
     def play(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if not is_int(args[0]):
             do_help(user, ['table', 'play'])
@@ -594,10 +620,11 @@ def do_table(user, args):
         table.play(user, card)
         channels.do_tinfo(user, "play {}.".format(card.name), "plays {}.".format(card.name))
 
+    @d_user_has(user, 'table')
     def discard(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if not is_int(args[0]):
             do_help(user, ['table', 'play'])
@@ -609,10 +636,11 @@ def do_table(user, args):
         table.discard(user, card)
         channels.do_tinfo(user, "discard {}.".format(card.name), "discards {}.".format(card.name))
 
+    @d_user_has(user, 'table')
     def tap(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if args is None:
             do_help(user, ['table', 'tap'])
@@ -635,10 +663,11 @@ def do_table(user, args):
         else:
             do_help(user, ['table', 'tap'])
 
+    @d_user_has(user, 'table')
     def untap(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if args is None:
             do_help(user, ['table', 'untap'])
@@ -661,17 +690,19 @@ def do_table(user, args):
         else:
             do_help(user, ['table', 'tap'])
 
+    @d_user_has(user, 'table')
     def shuffle(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         user.table.shuffle(user)
         channels.do_tinfo(user, "shuffled your library.", "shuffled their library.")
 
+    @d_user_has(user, 'table')
     def tutor(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         if args is None:
             do_help(user, ['table', 'tutor'])
             return
@@ -681,10 +712,11 @@ def do_table(user, args):
         else:
             user.send_to_self("Failed to find '{}' in your library.".format(card_name))
 
+    @d_user_has(user, 'table')
     def destroy(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if args is None or not is_int(args[0]):
             do_help(user, ['table', 'destroy'])
@@ -697,10 +729,11 @@ def do_table(user, args):
         table.destroy(user, card)
         channels.do_tinfo(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
 
+    @d_user_has(user, 'table')
     def return_(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if args is None or not is_int(args[0]):
             do_help(user, ['table', 'return'])
@@ -713,10 +746,11 @@ def do_table(user, args):
         table.return_(user, card)
         channels.do_tinfo(user, "return {} to your hand.".format(card.name), "returns {} to their hand.".format(card.name))
 
+    @d_user_has(user, 'table')
     def greturn(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if args is None or not is_int(args[0]):
             do_help(user, ['table', 'greturn'])
@@ -729,10 +763,11 @@ def do_table(user, args):
         table.greturn(user, card)
         channels.do_tinfo(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
 
+    @d_user_has(user, 'table')
     def unearth(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if args is None or not is_int(args[0]):
             do_help(user, ['table', 'unearth'])
@@ -745,10 +780,11 @@ def do_table(user, args):
         table.unearth(user, card)
         channels.do_tinfo(user, "unearth your {}.".format(card.name), "unearths their {}.".format(card.name))
 
+    @d_user_has(user, 'table')
     def exile(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if args is None or not is_int(args[0]):
             do_help(user, ['table', 'exile'])
@@ -761,10 +797,11 @@ def do_table(user, args):
         table.exile(user, card)
         channels.do_tinfo(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
 
+    @d_user_has(user, 'table')
     def grexile(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         table = user.table
         if args is None or not is_int(args[0]):
             do_help(user, ['table', 'grexile'])
@@ -777,6 +814,7 @@ def do_table(user, args):
         table.grexile(user, card)
         channels.do_tinfo(user, "exile {} from your graveyard.".format(card.name), "exiles {} from their graveyard.".format(card.name))
 
+    @d_user_has(user, 'table')
     def scoop(args):
         if user.table is None:
             user.send_to_self("You're not at a table!")
@@ -784,10 +822,11 @@ def do_table(user, args):
         user.table.scoop(user)
         channels.do_tinfo(user, "scoop it up!", "scoops it up!")
 
+    @d_user_has(user, 'table')
     def time(args):
-        if user.table is None:
-            user.send_to_self("You're not at a table!")
-            return
+        # if user.table is None:
+        #     user.send_to_self("You're not at a table!")
+        #     return
         elapsed = int((server.ticker - user.table.start_time)/60)
         user.send_to_self("{} minutes have elapsed.".format(elapsed))
 
