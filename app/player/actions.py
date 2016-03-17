@@ -520,7 +520,7 @@ def do_table(user, args):
                 if len(t.users) < 2 or user in t.users:
                     t.join(user)
                     user.table = t
-                    channels.do_tinfo("{} has joined the table.".format(t.name))
+                    channels.do_tinfo(user.table, "{} has joined the table.".format(t.name))
                     return
         user.send_to_self("Could not find table '{}'.".format(table_name))
 
@@ -558,7 +558,7 @@ def do_table(user, args):
         #     return
         user.table.stack(user)
         user.table.shuffle(user)
-        channels.do_tinfo(user.table, "stacked your library.", "stacked their library.")
+        channels.do_tinfo(user.table, "{} stacked their library.".format(user.name))
 
     @d_user_has(user, 'table')
     def life(args):
@@ -572,7 +572,7 @@ def do_table(user, args):
             do_help(user, ['table', 'hp'])
             return
         user.table.life_totals[user] += int(args[0])
-        channels.do_tinfo(user, "set your life total to {}.".format(user.table.life_totals[user]), "set their life total to {}.".format(user.table.life_totals[user]))
+        channels.do_tinfo(user.table, "{} set their life total to {}.".format(user.name,user.table.life_totals[user]))
 
     @d_user_has(user, 'table')
     def draw(args):
@@ -584,7 +584,7 @@ def do_table(user, args):
             return
         if args is None:
             user.table.draw(user)
-            channels.do_tinfo(user, "draw a card.", "draws a card.")
+            channels.do_tinfo(user.table, "{} draws a card.".format(user.name))
             return
         if not is_int(args[0]):
             do_help(user, ['table', 'draw'])
@@ -594,7 +594,7 @@ def do_table(user, args):
             user.send_to_self("Ummm... how would you even... Uhh... I don't... No. Just, no.")
             return
         user.table.draw(user, no_cards)
-        channels.do_tinfo(user, "draw {} cards.".format(no_cards), "draws {} cards.".format(no_cards))
+        channels.do_tinfo(user.table, "{} draws {} cards.".format(user.name, no_cards))
 
     @d_user_has(user, 'table')
     def hand(args):
@@ -617,7 +617,7 @@ def do_table(user, args):
             return
         card = table.hands[user][int(args[0])]
         table.play(user, card)
-        channels.do_tinfo(user, "play {}.".format(card.name), "plays {}.".format(card.name))
+        channels.do_tinfo(user.table, "{} plays {}.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def discard(args):
@@ -633,7 +633,7 @@ def do_table(user, args):
             return
         card = table.hands[user][int(args[0])]
         table.discard(user, card)
-        channels.do_tinfo(user, "discard {}.".format(card.name), "discards {}.".format(card.name))
+        channels.do_tinfo(user.table, "{} discards {}.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def tap(args):
@@ -654,11 +654,11 @@ def do_table(user, args):
                 user.send_to_self("{} is already tapped.".format(card.name))
                 return
             card.tap()
-            channels.do_tinfo(user, "tap {}.".format(card.name), "taps {}.".format(card.name))
+            channels.do_tinfo(user.table, "{} taps {}.".format(user.name, card.name))
         elif args[0] == "all":
             for card in table.battlefields[user]:
                 card.tap()
-            channels.do_tinfo(user, "tap all your cards.", "taps all their cards.")
+            channels.do_tinfo(user.table, "{} taps all their cards.".format(user.name))
         else:
             do_help(user, ['table', 'tap'])
 
@@ -681,7 +681,7 @@ def do_table(user, args):
                 user.send_to_self("'{}' is not tapped.".format(card.name))
                 return
             card.untap()
-            channels.do_tinfo(user, "untap {}.".format(card.name), "untaps {}.".format(card.name))
+            channels.do_tinfo(user.table, "{} untaps {}.".format(user.name, card.name))
         elif args[0] == "all":
             for card in table.battlefields[user]:
                 card.untap()
@@ -707,7 +707,7 @@ def do_table(user, args):
             return
         card_name = ' '.join(args)
         if user.table.tutor(user, card_name):
-            channels.do_tinfo(user, "tutored {} from your library.".format(card_name), "tutored {} from their library.".format(user.name, card_name))
+            channels.do_tinfo(user.table, "{} tutored {} from their library.".format(user.name, card_name))
         else:
             user.send_to_self("Failed to find '{}' in your library.".format(card_name))
 
@@ -743,7 +743,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.return_(user, card)
-        channels.do_tinfo(user, "return {} to your hand.".format(card.name), "returns {} to their hand.".format(card.name))
+        channels.do_tinfo(user.table, "{} returns {} to their hand.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def greturn(args):
@@ -777,7 +777,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][card_index]
         table.unearth(user, card)
-        channels.do_tinfo(user, "unearth your {}.".format(card.name), "unearths their {}.".format(card.name))
+        channels.do_tinfo(user.table, "{} unearths their {}.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def exile(args):
@@ -811,7 +811,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][card_index]
         table.grexile(user, card)
-        channels.do_tinfo(user, "exile {} from your graveyard.".format(card.name), "exiles {} from their graveyard.".format(card.name))
+        channels.do_tinfo(user.table, "exiles {} from their graveyard.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def scoop(args):
@@ -819,7 +819,7 @@ def do_table(user, args):
             user.send_to_self("You're not at a table!")
             return
         user.table.scoop(user)
-        channels.do_tinfo(user, "scoop it up!", "scoops it up!")
+        channels.do_tinfo(user.table, "{} scoops it up!".format(user.name))
 
     @d_user_has(user, 'table')
     def time(args):
