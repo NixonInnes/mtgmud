@@ -14,7 +14,7 @@ def is_int(s):
 
 #Trying out this decorator malarky... still not convinced, but lets give it a bash; might at least be useful to have later
 class d_user_has(object):
-    def __init__(self, user, attrib, error_msg="Huh?"):
+    def __init__(self, user, attrib, error_msg='Huh?'):
         self.user = user
         self.attrib = attrib
         self.error_msg = error_msg
@@ -26,7 +26,6 @@ class d_user_has(object):
             else:
                 self.user.send_to_self(self.error_msg)
         return wrapper
-
 
 
 #TODO: Tidy up the logic of these functions to be more consistent
@@ -366,7 +365,7 @@ def do_deck(user, args):
         if args is None:
             do_help(user, ['deck'])
             return
-        deck_name = mud.colour.strip(' '.join(args))
+        deck_name = style.strip_colours(' '.join(args))
         for d in user.decks:
             if d.name == deck_name:
                 user.send_to_self("You already have a deck named '{}'.".format(deck_name))
@@ -503,7 +502,7 @@ def do_table(user, args):
         if args is None:
             do_help(user, ['table', 'create'])
             return
-        table_name = mud.colour.strip(' '.join(args))
+        table_name = style.strip_colours(' '.join(args))
         table_ = mud.models.Table(user, table_name)
         table_.start_time = int(server.tick_count)
         server.add_tick(table_.round_timer, table_.start_time+50*60, repeat=False)
