@@ -1,40 +1,47 @@
-from app import server
 from app import db
+from app import mud
+
 
 def send_to_server(msg):
-    for u in server.users:
+    for u in mud.users:
         u.send_to_self(msg)
+
 
 def send_to_room(room, msg):
     for user in room.occupants:
         user.send_to_self(msg)
 
+
 def send_to_table(table, msg):
     for user in table.users:
         user.send_to_self(msg)
+
 
 # Non-User channels
 def do_info(msg):
     send_to_server("&W[&Uinfo&x&W]&x &U{}&x".format(msg))
 
+
 def do_tinfo(table, msg):
     send_to_table(table, "&W[&Ytable&x&W]&x &Y{}&x".format(msg))
 
+
 def do_rinfo(room, msg):
     send_to_room(room, "&W[&croom&x&W]&x &c{}&x".format(msg))
+
 
 # User channels
 def send_to_channel(user, channel, msg, do_emote=False):
     args = msg.split()
 
     if channel.type is 0:
-        user_list = server.users
+        user_list = mud.users
     if channel.type is 1:
         user_list = user.room.occupants
     if channel.type is 2:
         user_list = user.table.users
     if channel.type is 3:
-        user_list = [server.get_user(args[0])]
+        user_list = [mud.get_user(args[0])]
         args = args[1:]
         msg = ' '.join(args)
         if msg[0] is '@':

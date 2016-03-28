@@ -1,8 +1,8 @@
 import requests, threading, time, json, os
 
-from app import db, config
-from app.db import models as db_models
-from . import models as v_models
+from app import session, config
+from app.models import db as db_models
+from app.models import mem as v_models
 
 # specify a function to be executed with specified params every n seconds.
 class Ticker(threading.Thread):

@@ -2,8 +2,9 @@ import os
 import re
 from random import randint
 
-from app import config, db, mud, server, style
+from app import config, db, mud, style
 from . import channels
+
 
 def is_int(s):
     try:
@@ -12,7 +13,7 @@ def is_int(s):
     except ValueError:
         return False
 
-#Trying out this decorator malarky... still not convinced, but lets give it a bash; might at least be useful to have later
+
 class d_user_has(object):
     def __init__(self, user, attrib, error_msg='Huh?'):
         self.user = user
@@ -28,7 +29,7 @@ class d_user_has(object):
         return wrapper
 
 
-#TODO: Tidy up the logic of these functions to be more consistent
+# TODO: Tidy up the logic of these functions to be more consistent
 
 def do_login(user, args):
     """
