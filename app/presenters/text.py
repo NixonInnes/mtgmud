@@ -1,9 +1,7 @@
 from itertools import zip_longest
 from textwrap import wrap
-
 from app.presenters.base import Presenter
 
-# Presenter default functions
 
 class TextPresenter(Presenter):
 
@@ -12,19 +10,19 @@ class TextPresenter(Presenter):
 
     def show_room(self, room):
         buff = "&y.-~~~~~~~~~~~~~~~~~~~~~~~~~~&Y{{&W {:^20} &Y}}&x&y~~~~~~~~~~~~~~~~~~~~~~~~~~-.&x\r\n".format(room.name)
-        buff += ""
         buff += "&y:                                                                              &y:&x\r\n"
         desc = wrap(room.desc, width=72)
         for line in desc:
             buff += "&y:&x   {:<72}   &y:&x\r\n".format(line)
         buff += "&y:                                                                              &y:&x\r\n"
-        occs = ', '.join([user.name for user in room.occupants].sort())
+        occs = ', '.join([user.name for user in room.occupants])
         occs = wrap(occs, width=76)
         for line in occs:
             buff += "&Y#[&x {:<74} &Y]#&x\r\n".format(line)
         self.present(buff)
 
     def show_table(self, table):
+        # TODO: fix this mess
         def table_header(name):
             buff = "&g===========================&G[[&W {:^20} &G]]&g===========================&x\r\n".format(name)
             return buff

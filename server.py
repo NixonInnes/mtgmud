@@ -1,9 +1,9 @@
-#!/usr/bin/env python
 import sys
 import socketserver
 
-from app import config, mud, presenter
+from app import config, mud
 from app.player import parser
+from app.presenters import presenters
 
 
 class User(socketserver.BaseRequestHandler):
@@ -18,7 +18,7 @@ class User(socketserver.BaseRequestHandler):
         self.table = None
         self.db = None
         self.flags = []
-        self.presenter = presenter['text']
+        self.presenter = presenters['text']
         mud.connected.append(self)
 
     def handle(self):
