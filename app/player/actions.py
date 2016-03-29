@@ -2,8 +2,9 @@ import os
 import re
 from random import randint
 
-from app import config, db, mud, style
-from . import channels
+from app import config, session, mud
+from app.models import db
+from app.player import channels
 
 
 def is_int(s):
@@ -58,7 +59,7 @@ def do_login(user, args):
                 user.send_to_self("That name is banned, sorry!")
                 user.get_prompt()
                 return
-            if db.session.query(db.models.User).filter_by(name=args[1]).first() is not None:
+            if session.query(db.User).filter_by(name=args[1]).first() is not None:
                 user.send_to_self("Username '{}' is already taken, sorry.".format(args[1]))
                 user.get_prompt()
                 return
@@ -66,17 +67,17 @@ def do_login(user, args):
                 name = args[1],
                 password = args[2],
                 aliases = {},
-                listening = ''.join([channel.key for channel in db.session.query(db.models.Channel).filter_by(default=True).all()])
+                listening = ''.join([channel.key for channel in session.query(db.Channel).filter_by(default=True).all()])
             )
-            db.session.add(dbUser)
-            db.session.commit()
+            session.add(dbUser)
+            session.commit()
             user.load(dbUser)
             channels.do_info("{} has entered the realm.".format(user.name))
             do_look(user, None)
             user.get_prompt()
             return
     if len(args) == 2:
-        dbUser = db.session.query(db.models.User).filter_by(name=args[0]).first()
+        dbUser = db.session.query(db.User).filter_by(name=args[0]).first()
         if dbUser is not None:
             if dbUser.verify_password(args[1]):
                 user.load(dbUser)
