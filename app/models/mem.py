@@ -1,4 +1,3 @@
-from itertools import zip_longest
 from random import shuffle
 
 from app import session
@@ -42,9 +41,9 @@ class Table(object):
         self.poison_counters = {}
         self.users = []
 
-    def round_timer(self):
-        for user in self.users:
-            user.send_to_self("&W[&x&gtable&x&W]&x &g50 minutes has elapsed.&w\r\n")
+    # def round_timer(self):
+    #     for user in self.users:
+    #         user.presenter.send_msg("&W[&x&gtable&x&W]&x &g50 minutes has elapsed.&w\r\n")
 
     def join(self, user):
         self.users.append(user)
@@ -82,15 +81,6 @@ class Table(object):
         for i in range(int(num)):
             self.hands[user].append(self.libraries[user][0])
             self.libraries[user].pop(0)
-
-
-    #
-    # def hand(self, user):
-    #     buff = style.header_40("Hand")
-    #     for card in self.hands[user]:
-    #         buff += style.body_40("({:2}) {:<25}".format(self.hands[user].index(card), card.name))
-    #     buff += style.FOOTER_40
-    #     return buff
 
     def play(self, user, card):
         self.battlefields[user].append(card)
