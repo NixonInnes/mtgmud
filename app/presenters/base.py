@@ -6,6 +6,9 @@ class Presenter(object):
     def present(self, buff):
         self.user.send(buff)
 
+    def show_msg(self, msg):
+        raise NotImplementedError
+
     def show_channel(self, channel, msg):
         raise NotImplementedError
 

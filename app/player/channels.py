@@ -1,5 +1,5 @@
-from app import db
-from app import mud
+from app import mud, session
+from app.models import db
 
 
 def send_to_server(msg):
@@ -35,12 +35,14 @@ def send_to_channel(user, channel, msg, do_emote=False):
     args = msg.split()
 
     if channel.type is 0:
+        user_list = [user]
+    elif channel.type is 1:
         user_list = mud.users
-    if channel.type is 1:
+    elif channel.type is 2:
         user_list = user.room.occupants
-    if channel.type is 2:
+    elif channel.type is 3:
         user_list = user.table.users
-    if channel.type is 3:
+    elif channel.type is 4:
         user_list = [mud.get_user(args[0])]
         args = args[1:]
         msg = ' '.join(args)
@@ -88,7 +90,7 @@ def send_to_channel(user, channel, msg, do_emote=False):
 
 
 def get_emote(user, emote, vict=None):
-    emote = db.session.query(db.models.Emote).filter_by(name=emote).first()
+    emote = session.query(db.Emote).filter_by(name=emote).first()
     if emote is None:
         return None
     if vict is not None:

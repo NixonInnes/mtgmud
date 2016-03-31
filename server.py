@@ -9,7 +9,6 @@ from app.presenters import presenters
 class User(socketserver.BaseRequestHandler):
     """Client connection, an instance per connection."""
 
-    # overwrite setup() to do initialization actions
     def setup(self):
         print("Connection received from: {}".format(self.client_address))
         self.authd = False
@@ -18,15 +17,13 @@ class User(socketserver.BaseRequestHandler):
         self.table = None
         self.db = None
         self.flags = []
-        self.presenter = presenters['text']
+        self.presenter = presenters['text'](self)
         mud.connected.append(self)
 
     def handle(self):
-        # self.request is the client connection
         while True:
             data = self.request.recv(1024)
             msg = data.decode('utf-8')
-            # send msg to parser
             parser.parse(self, msg)
 
     def send(self, msg):

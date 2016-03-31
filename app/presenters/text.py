@@ -6,7 +6,8 @@ from app.presenters.base import Presenter
 class TextPresenter(Presenter):
 
     # TODO: write show_channels()
-    #def show_channel(self, channel, msg):
+    def show_channel(self, channel, msg):
+        self.present("&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, msg))
 
     def show_room(self, room):
         buff = "&y.-~~~~~~~~~~~~~~~~~~~~~~~~~~&Y{{&W {:^20} &Y}}&x&y~~~~~~~~~~~~~~~~~~~~~~~~~~-.&x\r\n".format(room.name)
