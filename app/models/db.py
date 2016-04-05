@@ -4,13 +4,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 from app import config
 
 engine = create_engine(config.DATABASE)
 Session = sessionmaker(bind=engine)
-session = Session()
+session = scoped_session(Session)
 Base = declarative_base()
 
 USER_FLAGS = {

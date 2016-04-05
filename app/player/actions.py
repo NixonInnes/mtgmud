@@ -64,7 +64,7 @@ def do_login(user, args):
                 user.presenter.show_msg("Username '{}' is already taken, sorry.".format(args[1]))
                 #user.get_prompt()
                 return
-            dbUser = db.models.User(
+            dbUser = db.User(
                 name = args[1],
                 password = args[2],
                 aliases = {},
@@ -82,10 +82,11 @@ def do_login(user, args):
         if dbUser is not None:
             if dbUser.verify_password(args[1]):
                 user.load(dbUser)
-                if user.is_banned():
-                    user.presenter.show_msg("Eeek, it looks like you're banned buddy! Bye!")
-                    actions['quit'](user, None)
-                    return
+                # TODO: Move this to user.flags
+                # if user.is_banned():
+                #     user.presenter.show_msg("Eeek! It looks like you're banned, buddy! Bye!")
+                #     actions['quit'](user, None)
+                #     return
                 channels.do_info("{} has entered the realm.".format(user.name))
                 do_look(user, None)
                 #user.get_prompt()

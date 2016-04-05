@@ -26,6 +26,22 @@ class User(socketserver.BaseRequestHandler):
             msg = data.decode('utf-8')
             parser.parse(self, msg)
 
+    def load(self, dbUser):
+        for user in mud.users:
+            if user.db.id is dbUser.id:
+                user.presenter.send_msg("You have signed in from another location!")
+
+        self.authd = True
+        self.name = str(dbUser.name)
+        self.flags = dict(dbUser.flags)
+        self.deck = dbUser.deck
+        self.decks = dbUser.decks
+        self.db = dbUser
+        mud.users.append(self)
+        lobby = mud.get_room(config.LOBBY_ROOM_NAME)
+        self.room = lobby
+        lobby.occupants.append(self)
+
     def send(self, msg):
         self.request.send(msg.encode('utf-8'))
 

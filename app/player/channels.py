@@ -3,18 +3,18 @@ from app.models import db
 
 
 def send_to_server(msg):
-    for u in mud.users:
-        u.send_to_self(msg)
+    for user in mud.users:
+        user.presenter.show_msg(msg)
 
 
 def send_to_room(room, msg):
     for user in room.occupants:
-        user.send_to_self(msg)
+        user.presenter.show_msg(msg)
 
 
 def send_to_table(table, msg):
     for user in table.users:
-        user.send_to_self(msg)
+        user.presenter.show_msg(msg)
 
 
 # Non-User channels
