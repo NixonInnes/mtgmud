@@ -21,11 +21,14 @@ USER_FLAGS = {
     'frozen': False
 }
 
+
 def generate_password_hash(password):
     return pbkdf2_sha256.encrypt(password, rounds=150000, salt_size=15)
 
+
 def check_password_hash(password, password_hash):
     return pbkdf2_sha256.verify(password, password_hash)
+
 
 class User(Base):
     __tablename__ = 'users'
