@@ -5,6 +5,7 @@ from random import randint
 from app import config, session, mud
 from app.models import db
 from app.player import channels
+from app.libs import colour
 
 
 def is_int(s):
@@ -45,18 +46,23 @@ def do_login(user, args):
         if len(args) == 4 and args[2] == args[3]:
             if not re.match('^[\w-]', args[1]):
                 user.presenter.show_msg("Invalid username, please only use alphanumerics.")
+                user.get_prompt()
                 return
             if len(args[1]) < 3:
                 user.presenter.show_msg("Username is too short (min. 3).")
+                user.get_prompt()
                 return
             if len(args[1]) > 20:
                 user.presenter.show_msg("Username is too long (max. 20).")
+                user.get_prompt()
                 return
             if str(args[1]).lower() in config.BANNED_NAMES:
                 user.presenter.show_msg("That name is banned, sorry!")
+                user.get_prompt()
                 return
             if session.query(db.User).filter_by(name=args[1]).first() is not None:
                 user.presenter.show_msg("Username '{}' is already taken, sorry.".format(args[1]))
+                user.get_prompt()
                 return
             dbUser = db.models.User(
                 name = args[1],
@@ -72,7 +78,7 @@ def do_login(user, args):
             user.get_prompt()
             return
     if len(args) == 2:
-        dbUser = session.query(db.User).filter_by(name=args[0]).first()
+        dbUser = db.session.query(db.User).filter_by(name=args[0]).first()
         if dbUser is not None:
             if dbUser.verify_password(args[1]):
                 user.load(dbUser)
@@ -82,9 +88,11 @@ def do_login(user, args):
                     return
                 channels.do_info("{} has entered the realm.".format(user.name))
                 do_look(user, None)
+                user.get_prompt()
                 return
 
     user.presenter.show_msg("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c")
+    user.get_prompt()
 
 
 def do_quit(user, args):
@@ -93,19 +101,17 @@ def do_quit(user, args):
     """
     user.presenter.show_msg("&gYou are wracked with uncontrollable pain as you are extracted from the Matrix.&x")
     channels.do_info("{} has left the realm.".format(user.name))
-    user.disconnect()
+    user.transport.close()
 
 
 def do_look(user, args):
     """
     Sends room information to the user.
     """
-    if user.room is None:
-        user.presenter.show_msg("You're floating in a limitless void, flooded with eternal darkness...\r\nPlease 'goto {}'".format(config.LOBBY_ROOM_NAME))
-        return
-    user.presenter.show_room(user.room)
+    user.parser.show_room(user.room)
 
 
+# TODO: Make some kind of table data presenter
 # def do_who(user, args):
 #     """
 #     Sends a list of connected users to the user.
@@ -113,7 +119,7 @@ def do_look(user, args):
 #     buff = style.header_80("ONLINE USERS")
 #     buff += style.body_2cols_80('USERS', 'ROOM')
 #     buff += style.ROW_LINE_80
-#     for u in mud.users:
+#     for u in server.users:
 #         buff += style.body_2cols_80(u.name, u.room.name)
 #     buff += style.body_80("Online: {:^3}".format(len(mud.users)), align='left')
 #     buff += style.FOOTER_80
@@ -132,23 +138,22 @@ def do_help(user, args):
             file = open(filename, 'r')
         else:
             file = open('help/help', 'r')
-    help_ = file.read()
-    file.close()
-    user.presenter.show_msg(help_)
+    user.presenter.show_help(file)
 
 
 def do_alias(user, args):
     """
     Create or delete aliases for the user.
     """
-    # if args is None:
-    #     buff = style.header_40('Aliases')
-    #     for alias in user.db.aliases:
-    #         buff += style.body_40("{}: {}".format(alias, user.db.aliases[alias]))
-    #     buff += style.BLANK_40
-    #     buff += style.FOOTER_40
-    #     user.presenter.show_msg(buff)
-    #     return
+    if args is None:
+        # TODO: presenter table data
+        # buff = style.header_40('Aliases')
+        # for alias in user.db.aliases:
+        #     buff += style.body_40("{}: {}".format(alias, user.db.aliases[alias]))
+        # buff += style.BLANK_40
+        # buff += style.FOOTER_40
+        # user.presenter.show_msg(buff)
+        return
     if args[0] == 'delete' and len(args) > 1:
         if args[1] in user.db.aliases:
             user.db.aliases.pop(args[1])
@@ -184,7 +189,7 @@ def do_make_admin(user, args):
         return
     u.flags['admin'] = True
     u.save()
-    user.msg_client(u, "&RYou have been made an Admin!&x")
+    u.presenter.show_msg("&RYou have been made an Admin!&x")
     user.presenter.show_msg("&CYou have admin'd {}.&x")
 
 def do_mute(user, args):
@@ -257,6 +262,7 @@ def do_card(user, args):
     Queries the card database, and sends results to the user.
     """
     card_name = ' '.join(args)
+    # TODO: Why does this return a list, surely should be a single card?!
     cards = db.models.Card.search(card_name)
     if len(cards) < 1:
         user.presenter.show_msg("Could not find card: {}".format(card_name))
@@ -264,11 +270,12 @@ def do_card(user, args):
     user.presenter.show_card(cards[0])
 
 
+# TODO: presenter table data
 # def do_rooms(user, args):
 #     buff = style.header_80('ROOMS')
 #     buff += style.body_2cols_80('ROOM', 'USERS')
 #     buff += style.ROW_LINE_2COL_80
-#     for room in mud.rooms:
+#     for room in server.rooms:
 #         buff += style.body_2cols_80(room.name, ', '.join(user.name for user in room.occupants))
 #     buff += style.BLANK_80
 #     buff += style.FOOTER_80
@@ -280,16 +287,16 @@ def do_room(user, args):
         if args is None:
             do_help(user, ['room'])
             return
-        room_name = style.strip_colours(' '.join(args))
-        # Check the database for duplicate name, rather than the mud.rooms list, as we may not want to load rooms for some reason later
-        if session.query(db.models.Room).filter_by(name=room_name).first() is not None:
+        room_name = colour.strip_tokens(' '.join(args))
+        # Check the database for duplicate name, rather than the server.rooms list, as we may not want to load rooms for some reason later
+        if db.session.query(db.models.Room).filter_by(name=room_name).first() is not None:
             user.presenter.show_msg("The room name '{}' is already taken, sorry.".format(room_name))
             return
         room = db.models.Room(name=str(room_name))
         vroom = mud.models.Room.load(room)
         mud.rooms.append(vroom)
-        session.add(room)
-        session.commit()
+        db.session.add(room)
+        db.session.commit()
         user.presenter.show_msg("Room created: {}".format(room_name))
 
     def delete(args):
@@ -305,8 +312,8 @@ def do_room(user, args):
                 do_goto(occupant, config.LOBBY_ROOM_NAME)
                 user.send_to_user(occupant, "The lights flicker and you are suddenly in {}. Weird...".format(config.LOBBY_ROOM_NAME))
             mud.rooms.remove(room)
-            session.delete(room.db)
-            session.commit()
+            db.session.delete(room.db)
+            db.session.commit()
             user.presenter.show_msg("Room '{}' has been deleted.".format(room.name))
             return
         user.presenter.show_msg("Room '{}' was not found.".format(room_name))
@@ -349,7 +356,7 @@ def do_deck(user, args):
         if args is None:
             do_help(user, ['deck'])
             return
-        deck_name = style.strip_colours(' '.join(args))
+        deck_name = colour.strip_tokens(' '.join(args))
         for d in user.decks:
             if d.name == deck_name:
                 user.presenter.show_msg("You already have a deck named '{}'.".format(deck_name))
@@ -359,9 +366,9 @@ def do_deck(user, args):
             user_id = user.db.id,
             cards = {}
         )
-        session.add(new_deck)
+        db.session.add(new_deck)
         user.decks.append(new_deck)
-        session.commit()
+        db.session.commit()
         user.deck = new_deck
         user.presenter.show_msg("Created new deck '{}'.".format(new_deck.name))
 
@@ -373,8 +380,8 @@ def do_deck(user, args):
         for deck in user.decks:
             if deck.name == deck_name:
                 user.deck = deck
-                session.add(user.db)
-                session.commit()
+                db.session.add(user.db)
+                db.session.commit()
                 print(user.deck)
                 user.presenter.show_msg("'{}' is now your active deck.".format(deck.name))
                 return
@@ -408,7 +415,7 @@ def do_deck(user, args):
             user.deck.cards[s_card.id] += num_cards
         else:
             user.deck.cards[s_card.id] = num_cards
-        session.commit()
+        db.session.commit()
         user.presenter.show_msg("Added {} x '{}' to '{}'.".format(num_cards, s_card.name, user.deck.name))
 
     @d_user_has(user, 'deck', "You don't have a deck!")
@@ -435,7 +442,7 @@ def do_deck(user, args):
                 user.deck.cards[card] -= num_cards
                 if user.deck.cards[card] < 1:
                     user.deck.cards.pop(card, None)
-                session.commit()
+                db.session.commit()
                 user.presenter.show_msg("Removed {} x '{}' from '{}'.".format(num_cards, s_card.name, user.deck.name))
                 return
 
@@ -447,18 +454,19 @@ def do_deck(user, args):
     }
 
     if args is None:
-        if user.deck is None:
-            do_help(user, ['deck'])
-            return
-        buff = style.header_40(user.deck.name)
-        num_cards = 0
-        for card in user.deck.cards:
-            num_cards += user.deck.cards[card]
-            s_card = session.query(db.models.Card).get(int(card))
-            buff += style.body_40("{:^3} x {:<25}".format(user.deck.cards[card], s_card.name))
-        buff += style.body_40(" [{}]".format(num_cards, ''), align='left')
-        buff += style.FOOTER_40
-        user.presenter.show_msg(buff)
+        # TODO: presenter table data
+        # if user.deck is None:
+        #     do_help(user, ['deck'])
+        #     return
+        # buff = style.header_40(user.deck.name)
+        # num_cards = 0
+        # for card in user.deck.cards:
+        #     num_cards += user.deck.cards[card]
+        #     s_card = db.session.query(db.models.Card).get(int(card))
+        #     buff += style.body_40("{:^3} x {:<25}".format(user.deck.cards[card], s_card.name))
+        # buff += style.body_40(" [{}]".format(num_cards, ''), align='left')
+        # buff += style.FOOTER_40
+        # user.presenter.show_msg(buff)
         return
     if args[0] in verbs:
         verbs[args[0]](args[1:] if len(args) > 1 else None)
@@ -466,6 +474,7 @@ def do_deck(user, args):
     do_help(user, ['deck'])
 
 
+# TODO: presenter table data
 # def do_decks(user, args):
 #     buff = style.header_40('Decks')
 #     for deck in user.decks:
@@ -480,7 +489,7 @@ def do_table(user, args):
         if args is None:
             do_help(user, ['table', 'create'])
             return
-        table_name = style.strip_colours(' '.join(args))
+        table_name = colour.strip_tokens(' '.join(args))
         table_ = mud.models.Table(user, table_name)
         table_.start_time = int(mud.tick_count)
         mud.add_tick(table_.round_timer, table_.start_time+50*60, repeat=False)
@@ -510,7 +519,7 @@ def do_table(user, args):
             else:
                 do_help(user, ['table', 'dice'])
         else:
-            die_size = 6 #Default dice size
+            die_size = 6 # Default dice size
         roll = randint(1, die_size)
         channels.do_tinfo(user.table, "{} rolled {} on a {} sided dice.".format(user.name, roll, die_size))
 
@@ -561,7 +570,7 @@ def do_table(user, args):
 
     @d_user_has(user, 'table')
     def hand(args):
-        user.presenter.show_hang(user.table.hands[user])
+        user.presenter.show_cards(user.table.hand(user))
 
     @d_user_has(user, 'table')
     def play(args):
@@ -633,14 +642,14 @@ def do_table(user, args):
         elif args[0] == "all":
             for card in table.battlefields[user]:
                 card.untap()
-            channels.do_tinfo("{} untaps.".format(user.name))
+            channels.do_tinfo(user, "untap all your cards.", "untaps all their cards.")
         else:
             do_help(user, ['table', 'tap'])
 
     @d_user_has(user, 'table')
     def shuffle(args):
         user.table.shuffle(user)
-        channels.do_tinfo("{} shuffled their library.".format(user.name))
+        channels.do_tinfo(user, "shuffled your library.", "shuffled their library.")
 
     @d_user_has(user, 'table')
     def tutor(args):
@@ -665,7 +674,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.destroy(user, card)
-        channels.do_tinfo("{} destroys their {}.".format(user.name, card.name))
+        channels.do_tinfo(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
 
     @d_user_has(user, 'table')
     def return_(args):
@@ -693,7 +702,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][int(args[0])]
         table.greturn(user, card)
-        channels.do_tinfo("{} returns {} from their graveyard to hand.".format(user.name, card.name))
+        channels.do_tinfo(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
 
     @d_user_has(user, 'table')
     def unearth(args):
@@ -721,7 +730,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.exile(user, card)
-        channels.do_tinfo("{} exiles their {}.".format(user.name, card.name))
+        channels.do_tinfo(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
 
     @d_user_has(user, 'table')
     def grexile(args):
@@ -735,7 +744,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][card_index]
         table.grexile(user, card)
-        channels.do_tinfo(user.table, "{} exiles {} from their graveyard.".format(user.name, card.name))
+        channels.do_tinfo(user.table, "exiles {} from their graveyard.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def scoop(args):
@@ -802,7 +811,7 @@ actions = {
     'goto':  do_goto,
     'card':  do_card,
     'deck':  do_deck,
-    'decks': do_decks,
+#    'decks': do_decks,
     'table': do_table
 }
 

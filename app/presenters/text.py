@@ -1,11 +1,12 @@
 from itertools import zip_longest
 from textwrap import wrap
+from app.libs import colour
 from app.presenters.base import Presenter
 
 
 class TextPresenter(Presenter):
     def show_msg(self, msg):
-        self.present(msg+"\r\n")
+        self.present(colour.colourify(msg)+"\r\n")
 
     def show_channel(self, channel, msg):
         self.present("&W[&x{}{}&x&W]&x {}{}&\r\n".format(channel.colour_token, channel.name, channel.colour_token, msg))
@@ -105,40 +106,6 @@ class TextPresenter(Presenter):
 
 ########################################################################################################################
 # Additional functions
-
-
-COLOUR_TOKENS = {
-    '&b': '\033[30m',  # black
-    '&B': '\033[1;30m',  # bright-black
-    '&r': '\033[31m',  # red
-    '&R': '\033[1;31m',  # bright-red
-    '&g': '\033[32m',  # green
-    '&G': '\033[1;32m',  # bright-green
-    '&y': '\033[33m',  # yellow
-    '&Y': '\033[1;33m',  # bright-yellow
-    '&u': '\033[34m',  # blue
-    '&U': '\033[1;34m',  # bright-blue
-    '&m': '\033[35m',  # magenta
-    '&M': '\033[1;35m',  # bright-magenta
-    '&c': '\033[36m',  # cyan
-    '&C': '\033[1;36m',  # bright-cyan
-    '&w': '\033[37m',  # white
-    '&W': '\033[1;37m',  # bright-white
-    '&x': '\033[0m'  # reset
-}
-
-
-def colourify(buff):
-    for token in COLOUR_TOKENS:
-        buff = buff.replace(token, COLOUR_TOKENS[token])
-    return buff
-
-
-def strip_colours(buff):
-    for token in COLOUR_TOKENS:
-        buff = buff.replace(token, '')
-    return buff
-
 
 FOOTER_80 = "&c||############################################################################||&x\r\n"
 BLANK_80 = "&c||                                                                            ||&x\r\n"
