@@ -1,4 +1,5 @@
-from app import mud, db
+from app import mud
+from app.models import db
 from app.player.actions import actions
 import app.player.channels as channels
 
@@ -16,7 +17,7 @@ def parse(user, msg):
         args = msg.split()
 
     if msg[0] in mud.channels:
-        ch = db.session.query(db.models.Channel).get(msg[0])
+        ch = db.session.query(db.Channel).get(msg[0])
         if msg[1] == '@':
             channels.send_to_channel(user, ch, msg[2:], do_emote=True)
         else:

@@ -65,47 +65,57 @@ class TextPresenter(Presenter):
         self.present(buff)
 
     def show_card(self, card):
-        if card.colors is None:
-            c_token = "&w"
-        elif len(card.colors) > 1:
-            c_token = "&Y"
-        elif 'White' in card.colors:
-            c_token = "&W"
-        elif 'Blue' in card.colors:
-            c_token = "&U"
-        elif 'Black' in card.colors:
-            c_token = "&B"
-        elif 'Red' in card.colors:
-            c_token = "&R"
-        elif 'Green' in card.colors:
-            c_token = "&G"
-        else:
-            c_token = "&w"
-        buff = c_token + "****************************************&x\r\n"
-        buff += c_token + "*&x {:<29} {:>6} ".format(card.name, str(
-                card.manaCost) if card.manaCost is not None else "") + c_token + "*&x\r\n"
-        buff += c_token + "****************************************&x\r\n"
-        buff += c_token + "*&x {:<36} ".format(card.type) + c_token + "*&x\r\n"
-        buff += c_token + "****************************************&x\r\n"
-        buff += c_token + "*                                      *&x\r\n"
-        if card.text is not None:
-            textbox = wrap(card.text, width=36)
-            for line in textbox:
-                buff += c_token + "*&x {:<36} ".format(line) + c_token + "*&x\r\n"
-        if card.power is not None:
-            buff += c_token + "*&x                              {:^3}/{:^3} ".format(str(card.power), str(
-                    card.toughness)) + c_token + "*&x\r\n"
-        elif card.loyalty is not None:
-            buff += c_token + "*&x                                   {:^3} ".format(
-                    str(card.loyalty)) + c_token + "*&x\r\n"
-        else:
-            buff += c_token + "*                                      *&x\r\n"
-        buff += c_token + "****************************************&x\r\n"
+        self.present(draw_card(card))
+
+    def show_cards(self, cards):
+        buff = ""
+        for card in cards:
+            buff += draw_card(card)
         self.present(buff)
 
 
 ########################################################################################################################
 # Additional functions
+
+def draw_card(card):
+    if card.colors is None:
+        c_token = "&w"
+    elif len(card.colors) > 1:
+        c_token = "&Y"
+    elif 'White' in card.colors:
+        c_token = "&W"
+    elif 'Blue' in card.colors:
+        c_token = "&U"
+    elif 'Black' in card.colors:
+        c_token = "&B"
+    elif 'Red' in card.colors:
+        c_token = "&R"
+    elif 'Green' in card.colors:
+        c_token = "&G"
+    else:
+        c_token = "&w"
+    buff = c_token + "****************************************&x\r\n"
+    buff += c_token + "*&x {:<29} {:>6} ".format(card.name, str(
+        card.manaCost) if card.manaCost is not None else "") + c_token + "*&x\r\n"
+    buff += c_token + "****************************************&x\r\n"
+    buff += c_token + "*&x {:<36} ".format(card.type) + c_token + "*&x\r\n"
+    buff += c_token + "****************************************&x\r\n"
+    buff += c_token + "*                                      *&x\r\n"
+    if card.text is not None:
+        textbox = wrap(card.text, width=36)
+        for line in textbox:
+            buff += c_token + "*&x {:<36} ".format(line) + c_token + "*&x\r\n"
+    if card.power is not None:
+        buff += c_token + "*&x                              {:^3}/{:^3} ".format(str(card.power), str(
+            card.toughness)) + c_token + "*&x\r\n"
+    elif card.loyalty is not None:
+        buff += c_token + "*&x                                   {:^3} ".format(
+            str(card.loyalty)) + c_token + "*&x\r\n"
+    else:
+        buff += c_token + "*                                      *&x\r\n"
+    buff += c_token + "****************************************&x\r\n"
+    return buff
+
 
 FOOTER_80 = "&c||############################################################################||&x\r\n"
 BLANK_80 = "&c||                                                                            ||&x\r\n"

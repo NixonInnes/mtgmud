@@ -2,7 +2,7 @@ import os
 import re
 from random import randint
 
-from app import config, session, mud
+from app import config, mud
 from app.models import db
 from app.player import channels
 from app.libs import colour
@@ -39,43 +39,43 @@ def do_login(user, args):
     """
     if len(args) == 0:
         user.presenter.show_msg("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c")
-        user.get_prompt()
+        #user.get_prompt()
         return
 
     if args[0] == 'register':
         if len(args) == 4 and args[2] == args[3]:
             if not re.match('^[\w-]', args[1]):
                 user.presenter.show_msg("Invalid username, please only use alphanumerics.")
-                user.get_prompt()
+                #user.get_prompt()
                 return
             if len(args[1]) < 3:
                 user.presenter.show_msg("Username is too short (min. 3).")
-                user.get_prompt()
+                #user.get_prompt()
                 return
             if len(args[1]) > 20:
                 user.presenter.show_msg("Username is too long (max. 20).")
-                user.get_prompt()
+                #user.get_prompt()
                 return
             if str(args[1]).lower() in config.BANNED_NAMES:
                 user.presenter.show_msg("That name is banned, sorry!")
-                user.get_prompt()
+                #user.get_prompt()
                 return
-            if session.query(db.User).filter_by(name=args[1]).first() is not None:
+            if db.session.query(db.User).filter_by(name=args[1]).first() is not None:
                 user.presenter.show_msg("Username '{}' is already taken, sorry.".format(args[1]))
-                user.get_prompt()
+                #user.get_prompt()
                 return
             dbUser = db.models.User(
                 name = args[1],
                 password = args[2],
                 aliases = {},
-                listening = ''.join([channel.key for channel in session.query(db.Channel).filter_by(default=True).all()])
+                listening = ''.join([channel.key for channel in db.session.query(db.Channel).filter_by(default=True).all()])
             )
-            session.add(dbUser)
-            session.commit()
+            db.session.add(dbUser)
+            db.session.commit()
             user.load(dbUser)
             channels.do_info("{} has entered the realm.".format(user.name))
             do_look(user, None)
-            user.get_prompt()
+            #user.get_prompt()
             return
     if len(args) == 2:
         dbUser = db.session.query(db.User).filter_by(name=args[0]).first()
@@ -88,11 +88,11 @@ def do_login(user, args):
                     return
                 channels.do_info("{} has entered the realm.".format(user.name))
                 do_look(user, None)
-                user.get_prompt()
+                #user.get_prompt()
                 return
 
     user.presenter.show_msg("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c")
-    user.get_prompt()
+    #user.get_prompt()
 
 
 def do_quit(user, args):
@@ -108,7 +108,7 @@ def do_look(user, args):
     """
     Sends room information to the user.
     """
-    user.parser.show_room(user.room)
+    user.presenter.show_room(user.room)
 
 
 # TODO: Make some kind of table data presenter
@@ -165,7 +165,7 @@ def do_alias(user, args):
         user.presenter.show_msg("That's not a good idea...")
         return
     user.db.aliases[args[0]] = ' '.join(args[1:])
-    session.commit()
+    db.session.commit()
     user.presenter.show_msg("Alias '{}' for '{}' created.".format(args[0], ' '.join(args[1:])))
 
 
