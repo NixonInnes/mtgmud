@@ -3,7 +3,8 @@ import threading
 import time
 
 import requests
-from app import config, db, game
+from . import objects
+from app import config, db
 
 
 class Ticker(threading.Thread):
@@ -81,7 +82,7 @@ class Mud(object):
             self.rooms.clear()
         for i in db.session.query(db.models.Room).all():
             print("Loading room: {}".format(i.name))
-            room = game.objects.Room.load(i)
+            room = objects.Room.load(i)
             self.rooms.append(room)
         print("Rooms loaded.")
 

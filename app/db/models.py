@@ -4,13 +4,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
-
 from app import config
 
 engine = create_engine(config.DATABASE)
-Session = sessionmaker(bind=engine)
-session = scoped_session(Session)
+
 Base = declarative_base()
 
 USER_FLAGS = {
@@ -88,9 +85,12 @@ class Card(Base):
     toughness = Column(String)
     loyalty = Column(String)
 
+
+    # TODO: remove this
     @staticmethod
     def search(card_name):
-        return session.query(Card).filter(Card.name.like(card_name)).all()
+        return None
+        #return session.query(Card).filter(Card.name.like(card_name)).all()
 
     def __repr__(self):
         return "<Card(name='{}')>".format(self.name)
@@ -113,11 +113,12 @@ class Deck(Base):
             num += self.cards[card]
         return num
 
-    def show(self):
-        buff = "\nDeck: {}".format(self.name)
-        for card in self.cards:
-            buff += "\n{} x {}".format(self.cards[card], session.query(Card).get(card).name)
-        return buff
+    # This is bad
+    # def show(self):
+    #     buff = "\nDeck: {}".format(self.name)
+    #     for card in self.cards:
+    #         buff += "\n{} x {}".format(self.cards[card], session.query(Card).get(card).name)
+    #     return buff
 
     def __repr__(self):
         return "<Deck(name='{}')>".format(self.name)

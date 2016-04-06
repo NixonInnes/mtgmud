@@ -78,7 +78,7 @@ def do_login(user, args):
                 #     user.presenter.show_msg("Eeek! It looks like you're banned, buddy! Bye!")
                 #     actions['quit'](user, None)
                 #     return
-                game.hannels.do_info("{} has entered the realm.".format(user.name))
+                game.channels.do_info("{} has entered the realm.".format(user.name))
                 do_look(user, None)
                 return
 
