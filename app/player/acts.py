@@ -1,11 +1,8 @@
 import os
 import re
-from random import randint
-
-from app import config, mud
-from app.models import db
-from app.player import channels
+from app import config, db, game, mud
 from app.libs import colour
+from random import randint
 
 
 def is_int(s):
@@ -39,46 +36,40 @@ def do_login(user, args):
     """
     if len(args) == 0:
         user.presenter.show_msg("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c")
-        #user.get_prompt()
         return
 
     if args[0] == 'register':
         if len(args) == 4 and args[2] == args[3]:
             if not re.match('^[\w-]', args[1]):
                 user.presenter.show_msg("Invalid username, please only use alphanumerics.")
-                #user.get_prompt()
                 return
             if len(args[1]) < 3:
                 user.presenter.show_msg("Username is too short (min. 3).")
-                #user.get_prompt()
                 return
             if len(args[1]) > 20:
                 user.presenter.show_msg("Username is too long (max. 20).")
-                #user.get_prompt()
                 return
             if str(args[1]).lower() in config.BANNED_NAMES:
                 user.presenter.show_msg("That name is banned, sorry!")
-                #user.get_prompt()
                 return
-            if db.session.query(db.User).filter_by(name=args[1]).first() is not None:
+            if db.session.query(db.models.User).filter_by(name=args[1]).first() is not None:
                 user.presenter.show_msg("Username '{}' is already taken, sorry.".format(args[1]))
-                #user.get_prompt()
                 return
-            dbUser = db.User(
+            dbUser = db.models.User(
                 name = args[1],
                 password = args[2],
                 aliases = {},
-                listening = ''.join([channel.key for channel in db.session.query(db.Channel).filter_by(default=True).all()])
+                listening = ''.join([channel.key for channel in db.session.query(db.models.Channel).filter_by(default=True).all()])
             )
             db.session.add(dbUser)
             db.session.commit()
             user.load(dbUser)
-            channels.do_info("{} has entered the realm.".format(user.name))
+            game.channels.do_info("{} has entered the realm.".format(user.name))
             do_look(user, None)
-            #user.get_prompt()
             return
+
     if len(args) == 2:
-        dbUser = db.session.query(db.User).filter_by(name=args[0]).first()
+        dbUser = db.session.query(db.models.User).filter_by(name=args[0]).first()
         if dbUser is not None:
             if dbUser.verify_password(args[1]):
                 user.load(dbUser)
@@ -87,13 +78,11 @@ def do_login(user, args):
                 #     user.presenter.show_msg("Eeek! It looks like you're banned, buddy! Bye!")
                 #     actions['quit'](user, None)
                 #     return
-                channels.do_info("{} has entered the realm.".format(user.name))
+                game.hannels.do_info("{} has entered the realm.".format(user.name))
                 do_look(user, None)
-                #user.get_prompt()
                 return
 
     user.presenter.show_msg("&RLogin Error.&x\r\n&GLogin:&x &g<username> <password>&x\r\n&CRegister:&x &cregister <username> <password> <password>&c")
-    #user.get_prompt()
 
 
 def do_quit(user, args):
@@ -101,7 +90,7 @@ def do_quit(user, args):
     Closes the user connection.
     """
     user.presenter.show_msg("&gYou are wracked with uncontrollable pain as you are extracted from the Matrix.&x")
-    channels.do_info("{} has left the realm.".format(user.name))
+    game.channels.do_info("{} has left the realm.".format(user.name))
     user.transport.close()
 
 
@@ -254,7 +243,7 @@ def do_ban(user, args):
             u.save()
             user.msg_client(u, "&RYou have been banned!&x")
             user.presenter.show_msg("&CYou have banned {}.&x".format(u.name))
-            actions['quit'](u, None)
+            do_quit(u, None)
             return
     user.presenter.show_msg("Could not find user '{}'.".format(username))
 
@@ -289,7 +278,8 @@ def do_room(user, args):
             do_help(user, ['room'])
             return
         room_name = colour.strip_tokens(' '.join(args))
-        # Check the database for duplicate name, rather than the server.rooms list, as we may not want to load rooms for some reason later
+        # Check the database for duplicate name, rather than the server.rooms list,
+        # as we may not want to load rooms for some reason later
         if db.session.query(db.models.Room).filter_by(name=room_name).first() is not None:
             user.presenter.show_msg("The room name '{}' is already taken, sorry.".format(room_name))
             return
@@ -491,7 +481,7 @@ def do_table(user, args):
             do_help(user, ['table', 'create'])
             return
         table_name = colour.strip_tokens(' '.join(args))
-        table_ = mud.models.Table(user, table_name)
+        table_ = game.objects.Table(user, table_name)
         table_.start_time = int(mud.tick_count)
         mud.add_tick(table_.round_timer, table_.start_time+50*60, repeat=False)
         mud.tables.append(table_)
@@ -508,7 +498,7 @@ def do_table(user, args):
                 if len(t.users) < 2 or user in t.users:
                     t.join(user)
                     user.table = t
-                    channels.do_tinfo(user.table, "{} has joined the table.".format(t.name))
+                    game.channels.do_tinfo(user.table, "{} has joined the table.".format(t.name))
                     return
         user.presenter.show_msg("Could not find table '{}'.".format(table_name))
 
@@ -522,13 +512,13 @@ def do_table(user, args):
         else:
             die_size = 6 # Default dice size
         roll = randint(1, die_size)
-        channels.do_tinfo(user.table, "{} rolled {} on a {} sided dice.".format(user.name, roll, die_size))
+        game.channels.do_tinfo(user.table, "{} rolled {} on a {} sided dice.".format(user.name, roll, die_size))
 
     @d_user_has(user, 'table')
     def leave(args):
         table = user.table
         table.leave(user)
-        channels.do_tinfo(table, "{} has left the table.".format(user.name))
+        game.channels.do_tinfo(table, "{} has left the table.".format(user.name))
         user.table = None
         if len(table.users) < 1:
             del table
@@ -537,7 +527,7 @@ def do_table(user, args):
     def stack(args):
         user.table.stack(user)
         user.table.shuffle(user)
-        channels.do_tinfo(user.table, "{} stacked their library.".format(user.name))
+        game.channels.do_tinfo(user.table, "{} stacked their library.".format(user.name))
 
     @d_user_has(user, 'table')
     def life(args):
@@ -548,7 +538,7 @@ def do_table(user, args):
             do_help(user, ['table', 'hp'])
             return
         user.table.life_totals[user] += int(args[0])
-        channels.do_tinfo(user.table, "{} set their life total to {}.".format(user.name,user.table.life_totals[user]))
+        game.channels.do_tinfo(user.table, "{} set their life total to {}.".format(user.name, user.table.life_totals[user]))
 
     @d_user_has(user, 'table')
     def draw(args):
@@ -557,7 +547,7 @@ def do_table(user, args):
             return
         if args is None:
             user.table.draw(user)
-            channels.do_tinfo(user.table, "{} draws a card.".format(user.name))
+            game.channels.do_tinfo(user.table, "{} draws a card.".format(user.name))
             return
         if not is_int(args[0]):
             do_help(user, ['table', 'draw'])
@@ -567,7 +557,7 @@ def do_table(user, args):
             user.presenter.show_msg("Ummm... how would you even... Uhh... I don't... No. Just, no.")
             return
         user.table.draw(user, no_cards)
-        channels.do_tinfo(user.table, "{} draws {} cards.".format(user.name, no_cards))
+        game.channels.do_tinfo(user.table, "{} draws {} cards.".format(user.name, no_cards))
 
     @d_user_has(user, 'table')
     def hand(args):
@@ -584,7 +574,7 @@ def do_table(user, args):
             return
         card = table.hands[user][int(args[0])]
         table.play(user, card)
-        channels.do_tinfo(user.table, "{} plays {}.".format(user.name, card.name))
+        game.channels.do_tinfo(user.table, "{} plays {}.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def discard(args):
@@ -597,7 +587,7 @@ def do_table(user, args):
             return
         card = table.hands[user][int(args[0])]
         table.discard(user, card)
-        channels.do_tinfo(user.table, "{} discards {}.".format(user.name, card.name))
+        game.channels.do_tinfo(user.table, "{} discards {}.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def tap(args):
@@ -615,11 +605,11 @@ def do_table(user, args):
                 user.presenter.show_msg("{} is already tapped.".format(card.name))
                 return
             card.tap()
-            channels.do_tinfo(user.table, "{} taps {}.".format(user.name, card.name))
+            game.channels.do_tinfo(user.table, "{} taps {}.".format(user.name, card.name))
         elif args[0] == "all":
             for card in table.battlefields[user]:
                 card.tap()
-            channels.do_tinfo(user.table, "{} taps all their cards.".format(user.name))
+            game.channels.do_tinfo(user.table, "{} taps all their cards.".format(user.name))
         else:
             do_help(user, ['table', 'tap'])
 
@@ -639,18 +629,18 @@ def do_table(user, args):
                 user.presenter.show_msg("'{}' is not tapped.".format(card.name))
                 return
             card.untap()
-            channels.do_tinfo(user.table, "{} untaps {}.".format(user.name, card.name))
+            game.channels.do_tinfo(user.table, "{} untaps {}.".format(user.name, card.name))
         elif args[0] == "all":
             for card in table.battlefields[user]:
                 card.untap()
-            channels.do_tinfo(user, "untap all your cards.", "untaps all their cards.")
+            game.channels.do_tinfo(user, "untap all your cards.", "untaps all their cards.")
         else:
             do_help(user, ['table', 'tap'])
 
     @d_user_has(user, 'table')
     def shuffle(args):
         user.table.shuffle(user)
-        channels.do_tinfo(user, "shuffled your library.", "shuffled their library.")
+        game.channels.do_tinfo(user, "shuffled your library.", "shuffled their library.")
 
     @d_user_has(user, 'table')
     def tutor(args):
@@ -659,7 +649,7 @@ def do_table(user, args):
             return
         card_name = ' '.join(args)
         if user.table.tutor(user, card_name):
-            channels.do_tinfo(user.table, "{} tutored {} from their library.".format(user.name, card_name))
+            game.channels.do_tinfo(user.table, "{} tutored {} from their library.".format(user.name, card_name))
         else:
             user.presenter.show_msg("Failed to find '{}' in your library.".format(card_name))
 
@@ -675,7 +665,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.destroy(user, card)
-        channels.do_tinfo(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
+        game.channels.do_tinfo(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
 
     @d_user_has(user, 'table')
     def return_(args):
@@ -689,7 +679,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.return_(user, card)
-        channels.do_tinfo(user.table, "{} returns {} to their hand.".format(user.name, card.name))
+        game.channels.do_tinfo(user.table, "{} returns {} to their hand.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def greturn(args):
@@ -703,7 +693,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][int(args[0])]
         table.greturn(user, card)
-        channels.do_tinfo(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
+        game.channels.do_tinfo(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
 
     @d_user_has(user, 'table')
     def unearth(args):
@@ -717,7 +707,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][card_index]
         table.unearth(user, card)
-        channels.do_tinfo(user.table, "{} unearths their {}.".format(user.name, card.name))
+        game.channels.do_tinfo(user.table, "{} unearths their {}.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def exile(args):
@@ -731,7 +721,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.exile(user, card)
-        channels.do_tinfo(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
+        game.channels.do_tinfo(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
 
     @d_user_has(user, 'table')
     def grexile(args):
@@ -745,7 +735,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][card_index]
         table.grexile(user, card)
-        channels.do_tinfo(user.table, "exiles {} from their graveyard.".format(user.name, card.name))
+        game.channels.do_tinfo(user.table, "exiles {} from their graveyard.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def scoop(args):
@@ -753,7 +743,7 @@ def do_table(user, args):
             user.presenter.show_msg("You're not at a table!")
             return
         user.table.scoop(user)
-        channels.do_tinfo(user.table, "{} scoops it up!".format(user.name))
+        game.channels.do_tinfo(user.table, "{} scoops it up!".format(user.name))
 
     @d_user_has(user, 'table')
     def time(args):
@@ -797,22 +787,5 @@ def do_table(user, args):
     else:
         do_help(user, ['table'])
 
-actions = {
-    'login': do_login,
-    'quit':  do_quit,
-    'look':  do_look,
-#    'who':   do_who,
-    'help':  do_help,
-    'alias': do_alias,
-    'freeze': do_freeze,
-    'mute': do_mute,
-    'make_admin': do_make_admin,
-#    'rooms': do_rooms,
-    'room':  do_room,
-    'goto':  do_goto,
-    'card':  do_card,
-    'deck':  do_deck,
-#    'decks': do_decks,
-    'table': do_table
-}
+
 

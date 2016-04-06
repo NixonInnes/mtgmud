@@ -1,9 +1,9 @@
-import requests
+import json
 import threading
 import time
-import json
-from app import config
-from app.models import db, mem
+
+import requests
+from app import config, db, game
 
 
 class Ticker(threading.Thread):
@@ -34,20 +34,20 @@ class Mud(object):
         self.ticker.start()
 
         print("Checking Room database...")
-        if db.session.query(db.Room).filter_by(name=config.LOBBY_ROOM_NAME).first() is None:
+        if db.session.query(db.models.Room).filter_by(name=config.LOBBY_ROOM_NAME).first() is None:
             print("No lobby found....")
             self.create_lobby()
         self.load_rooms()
 
         print("Checking Card database...")
-        if db.session.query(db.Card).count() < 1:
+        if db.session.query(db.models.Card).count() < 1:
             print("Card database is empty. \r\nNow populating...")
             self.create_cards()
         else:
             print("Cards exist.")
 
         print("Checking for channels...")
-        if db.session.query(db.Channel).count() < 1:
+        if db.session.query(db.models.Channel).count() < 1:
             print("No channels found...")
             self.create_default_channels()
         else:
@@ -55,7 +55,7 @@ class Mud(object):
         self.load_channels()
 
         print("Checking for emotes...")
-        if db.session.query(db.Emote).count() < 1:
+        if db.session.query(db.models.Emote).count() < 1:
             print("No emotes found...")
             self.create_default_emotes()
         else:
@@ -64,7 +64,7 @@ class Mud(object):
     @staticmethod
     def create_lobby():
         print("Creating {}...".format(config.LOBBY_ROOM_NAME))
-        lobby = db.Room(
+        lobby = db.models.Room(
             name=config.LOBBY_ROOM_NAME,
             description=config.LOBBY_ROOM_DESC
         )
@@ -79,9 +79,9 @@ class Mud(object):
             for user in self.users:
                 user.room = None
             self.rooms.clear()
-        for i in db.session.query(db.Room).all():
+        for i in db.session.query(db.models.Room).all():
             print("Loading room: {}".format(i.name))
-            room = mem.Room.load(i)
+            room = game.objects.Room.load(i)
             self.rooms.append(room)
         print("Rooms loaded.")
 
@@ -90,7 +90,7 @@ class Mud(object):
         if self.channels is not None:
             print("Clearing out existing channels...")
             self.channels.clear()
-        for channel in db.session.query(db.Channel).all():
+        for channel in db.session.query(db.models.Channel).all():
             print("Loading channel: {}".format(channel.name))
             self.channels[channel.key] = channel
         print("Channels loaded.")
@@ -122,7 +122,7 @@ class Mud(object):
     @staticmethod
     def create_default_channels():
         print("Creating default channels...")
-        chat = db.Channel(
+        chat = db.models.Channel(
             key = ".",
             name = "chat",
             colour_token = "&G",
@@ -130,7 +130,7 @@ class Mud(object):
             default = True
         )
         db.session.add(chat)
-        say = db.Channel(
+        say = db.models.Channel(
             key = "\'",
             name = "say",
             colour_token = "&C",
@@ -138,7 +138,7 @@ class Mud(object):
             default = True
         )
         db.session.add(say)
-        tchat = db.Channel(
+        tchat = db.models.Channel(
             key = ";",
             name = "tchat",
             colour_token = "$y",
@@ -146,7 +146,7 @@ class Mud(object):
             default = True
         )
         db.session.add(tchat)
-        whisper = db.Channel(
+        whisper = db.models.Channel(
             key = ">",
             name = "whisper",
             colour_token = "&M",
@@ -155,7 +155,7 @@ class Mud(object):
         )
         db.session.add(whisper)
         db.session.commit()
-        print("Created default channels: {}".format(', '.join([channel.name for channel in db.session.query(db.Channel).filter_by(default=True).all()])))
+        print("Created default channels: {}".format(', '.join([channel.name for channel in db.session.query(db.models.Channel).filter_by(default=True).all()])))
 
     @staticmethod
     def create_default_emotes():
@@ -164,7 +164,7 @@ class Mud(object):
             emotes = json.load(emotes_json)
         for e in emotes:
             print("Adding emote: {}".format(e))
-            emote = db.Emote(
+            emote = db.models.Emote(
                 name = emotes[e]['name'],
                 user_no_vict = emotes[e]['user_no_vict'],
                 others_no_vict = emotes[e]['others_no_vict'] if 'others_no_vict' in emotes[e] else None,
@@ -181,7 +181,7 @@ class Mud(object):
     def create_cards():
         cards = requests.get('http://mtgjson.com/json/AllCards.json').json()
         for c in cards:
-            card = db.Card(
+            card = db.models.Card(
                 name = cards[c]['name'],
                 names = cards[c]['names'] if 'names' in cards[c] else None,
                 manaCost = cards[c]['manaCost'] if 'manaCost' in cards[c] else None,

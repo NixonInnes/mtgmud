@@ -1,14 +1,11 @@
-from app import mud
-from app.models import db
-from app.player.actions import actions
-import app.player.channels as channels
+from app import db, game, mud, player
 
 
 def parse(user, msg):
     args = msg.split()
 
     if user.authd is False:
-        actions['login'](user, args)
+        player.actions['login'](user, args)
         return
 
     if args[0] in user.db.aliases:
@@ -17,19 +14,18 @@ def parse(user, msg):
         args = msg.split()
 
     if msg[0] in mud.channels:
-        ch = db.session.query(db.Channel).get(msg[0])
+        ch = db.session.query(db.models.Channel).get(msg[0])
         if msg[1] == '@':
-            channels.send_to_channel(user, ch, msg[2:], do_emote=True)
+            game.channels.send_to_channel(user, ch, msg[2:], do_emote=True)
         else:
-            channels.send_to_channel(user, ch, msg[1:])
-        #user.get_prompt()
+            game.channels.send_to_channel(user, ch, msg[1:])
         return
 
-    if args[0] in actions:
-        if user.is_frozen():
-            user.send("You're frozen solid!")
-        else:
-            actions[args[0]](user, args[1:] if len(args) > 1 else None)
-        #user.get_prompt()
+    if args[0] in player.actions:
+        # if user.is_frozen():
+        #     user.send("You're frozen solid!")
+        # else:
+        #     actions[args[0]](user, args[1:] if len(args) > 1 else None)
+        player.actions[args[0]](user, args[1:] if len(args) > 1 else None)
         return
-    user.send("Huh?")
+    user.presenter.show_msg("Huh?")

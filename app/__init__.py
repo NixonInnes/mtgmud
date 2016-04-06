@@ -1,4 +1,4 @@
-from app.mud import Mud
+from app.game.mud import Mud
 
 
 mud = Mud()

@@ -1,5 +1,4 @@
-from app import mud
-from app.models import db
+from app import mud, db
 
 
 def send_to_server(msg):
@@ -90,7 +89,7 @@ def send_to_channel(user, channel, msg, do_emote=False):
 
 
 def get_emote(user, emote, vict=None):
-    emote = db.session.query(db.Emote).filter_by(name=emote).first()
+    emote = db.session.query(db.models.Emote).filter_by(name=emote).first()
     if emote is None:
         return None
     if vict is not None:

@@ -1,7 +1,5 @@
 from random import shuffle
-
-#from app import session
-from . import db
+from app import db
 
 
 class Room(object):
@@ -24,7 +22,7 @@ class Room(object):
     def save(self):
         self.db.room.name = self.name
         self.db.description = self.description
-        session.commit()
+        db.session.commit()
 
 
 class Table(object):
@@ -68,7 +66,7 @@ class Table(object):
     def stack(self, user):
         user.table.libraries[user].clear()
         for card in user.deck.cards:
-            dbCard = session.query(db.Card).get(card)
+            dbCard = db.session.query(db.models.Card).get(card)
             for i in range(user.deck.cards[card]):
                 self.libraries[user].append(Card.load(dbCard))
         self.life_totals[user] = 20
