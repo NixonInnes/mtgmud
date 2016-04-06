@@ -1,5 +1,7 @@
-from app import config, db, game
+from app import config, db
+from app.game import objects
 from app.libs import db_funcs
+
 
 def startup(mud):
     print("Checking Room database...")
@@ -40,7 +42,7 @@ def load_rooms(mud):
         mud.rooms.clear()
     for i in db.session.query(db.models.Room).all():
         print("Loading room: {}".format(i.name))
-        room = game.objects.Room.load(i)
+        room = objects.Room.load(i)
         mud.rooms.append(room)
     print("Rooms loaded.")
 

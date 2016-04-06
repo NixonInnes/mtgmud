@@ -12,7 +12,7 @@ class TextPresenter(Presenter):
         self.present(msg)
 
     def show_channel(self, channel, msg):
-        self.present("&W[&x{}{}&x&W]&x {}{}&\r\n".format(channel.colour_token, channel.name, channel.colour_token, msg))
+        self.present("&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, msg))
 
     def show_room(self, room):
         buff = "&y.-~~~~~~~~~~~~~~~~~~~~~~~~~~&Y{{&W {:^20} &Y}}&x&y~~~~~~~~~~~~~~~~~~~~~~~~~~-.&x\r\n".format(

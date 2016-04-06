@@ -1,9 +1,5 @@
-import json
 import threading
 import time
-
-import requests
-from app import config, db
 
 
 class Ticker(threading.Thread):

@@ -2,6 +2,7 @@ import json
 import requests
 from app import config, db
 
+
 def create_lobby():
     print("Creating {}...".format(config.LOBBY_ROOM_NAME))
     lobby = db.models.Room(
@@ -12,13 +13,14 @@ def create_lobby():
     db.session.commit()
     print("{} created.".format(lobby.name))
 
+
 def create_default_channels():
     print("Creating default channels...")
     chat = db.models.Channel(
         key=".",
         name="chat",
         colour_token="&G",
-        type=0,
+        type=1,
         default=True
     )
     db.session.add(chat)
@@ -26,7 +28,7 @@ def create_default_channels():
         key="\'",
         name="say",
         colour_token="&C",
-        type=1,
+        type=2,
         default=True
     )
     db.session.add(say)
@@ -34,7 +36,7 @@ def create_default_channels():
         key=";",
         name="tchat",
         colour_token="$y",
-        type=2,
+        type=3,
         default=True
     )
     db.session.add(tchat)
@@ -42,7 +44,7 @@ def create_default_channels():
         key=">",
         name="whisper",
         colour_token="&M",
-        type=3,
+        type=4,
         default=True
     )
     db.session.add(whisper)
