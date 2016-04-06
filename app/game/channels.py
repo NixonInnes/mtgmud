@@ -40,7 +40,7 @@ def send_to_channel(user, channel, msg, do_emote=False):
     elif channel.type is 2:
         user_list = user.room.occupants
     elif channel.type is 3:
-        user_list = user.table.users
+        user_list = user.table.users if user.table else []
     elif channel.type is 4:
         user_list = [mud.get_user(args[0])]
         args = args[1:]

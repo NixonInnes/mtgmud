@@ -23,3 +23,6 @@ class Presenter(object):
 
     def show_cards(self, cards):
         raise NotImplementedError
+
+    def show_help(self, help_file):
+        raise NotImplementedError

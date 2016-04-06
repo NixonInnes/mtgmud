@@ -1,7 +1,7 @@
 import sys
 import socketserver
 
-from app import config, mud
+from app import config, db, mud
 from app.player import parser
 from app.presenters import presenters
 
@@ -42,10 +42,16 @@ class User(socketserver.BaseRequestHandler):
         self.room = lobby
         lobby.occupants.append(self)
 
+    def save(self):
+        self.db.name = self.name
+        self.db.flags = self.flags
+        db.session.commit()
+
     def send(self, msg):
         self.request.send(msg.encode('utf-8'))
 
     def disconnect(self):
+        self.save()
         self.request.close()
 
 

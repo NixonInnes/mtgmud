@@ -9,7 +9,7 @@ def parse(user, msg):
         return
 
     if args[0] in user.db.aliases:
-        args[0] = str(user.db.aliases[args[0]])
+        args[0] = user.db.aliases[args[0]]
         msg = ' '.join(args)
         args = msg.split()
 
@@ -22,10 +22,9 @@ def parse(user, msg):
         return
 
     if args[0] in player.actions:
-        # if user.is_frozen():
-        #     user.send("You're frozen solid!")
-        # else:
-        #     actions[args[0]](user, args[1:] if len(args) > 1 else None)
-        player.actions[args[0]](user, args[1:] if len(args) > 1 else None)
+        if user.flags['frozen']:
+            user.send("You're frozen solid!")
+        else:
+            player.actions[args[0]](user, args[1:] if len(args) > 1 else None)
         return
     user.presenter.show_msg("Huh?")

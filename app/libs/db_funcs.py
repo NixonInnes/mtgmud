@@ -35,7 +35,7 @@ def create_default_channels():
     tchat = db.models.Channel(
         key=";",
         name="tchat",
-        colour_token="$y",
+        colour_token="&y",
         type=3,
         default=True
     )
@@ -53,23 +53,31 @@ def create_default_channels():
         ', '.join([channel.name for channel in db.session.query(db.models.Channel).filter_by(default=True).all()])))
 
 
-def create_default_emotes():
+def create_emotes(overwrite=False):
     print("Creating default emotes...")
     with open('app/player/emotes.json') as emotes_json:
         emotes = json.load(emotes_json)
-    for e in emotes:
-        print("Adding emote: {}".format(e))
-        emote = db.models.Emote(
-            name=emotes[e]['name'],
-            user_no_vict=emotes[e]['user_no_vict'],
-            others_no_vict=emotes[e]['others_no_vict'] if 'others_no_vict' in emotes[e] else None,
-            user_vict=emotes[e]['user_vict'] if 'user_vict' in emotes[e] else None,
-            others_vict=emotes[e]['others_vict'] if 'others_vict' in emotes[e] else None,
-            vict_vict=emotes[e]['vict_vict'] if 'vict_vict' in emotes[e] else None,
-            user_vict_self=emotes[e]['user_vict_self'] if 'user_vict_self' in emotes[e] else None,
-            others_vict_self=emotes[e]['others_vict_self'] if 'others_vict_self' in emotes[e] else None
+    for emote in emotes.values():
+        existing_emote = db.session.query(db.models.Emote).filter_by(name=emote['name']).first()
+        if existing_emote is not None:
+            if overwrite:
+                print("Existing emote {} found. Deleting.")
+                db.session.remove(existing_emote)
+            else:
+                print("Emote {} found. Skipping")
+                continue
+        print("Adding emote: {}".format(emote['name']))
+        dbEmote = db.models.Emote(
+            name=emote['name'],
+            user_no_vict=emote['user_no_vict'],
+            others_no_vict=emote['others_no_vict'] if 'others_no_vict' in emote else None,
+            user_vict=emote['user_vict'] if 'user_vict' in emote else None,
+            others_vict=emote['others_vict'] if 'others_vict' in emote else None,
+            vict_vict=emote['vict_vict'] if 'vict_vict' in emote else None,
+            user_vict_self=emote['user_vict_self'] if 'user_vict_self' in emote else None,
+            others_vict_self=emote['others_vict_self'] if 'others_vict_self' in emote else None
         )
-        db.session.add(emote)
+        db.session.add(dbEmote)
     db.session.commit()
 
 

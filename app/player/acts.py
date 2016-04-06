@@ -130,6 +130,7 @@ def do_help(user, args):
         else:
             file = open('help/help', 'r')
     user.presenter.show_help(file)
+    file.close()
 
 
 def do_alias(user, args):
@@ -248,17 +249,17 @@ def do_ban(user, args):
             return
     user.presenter.show_msg("Could not find user '{}'.".format(username))
 
+
 def do_card(user, args):
     """
     Queries the card database, and sends results to the user.
     """
     card_name = ' '.join(args)
-    # TODO: Why does this return a list, surely should be a single card?!
-    cards = db.models.Card.search(card_name)
-    if len(cards) < 1:
+    card = db.session.query(db.models.Card).filter(db.models.Card.name.like(card_name)).first()
+    if card is None:
         user.presenter.show_msg("Could not find card: {}".format(card_name))
         return
-    user.presenter.show_card(cards[0])
+    user.presenter.show_card(card)
 
 
 # TODO: presenter table data
@@ -390,14 +391,10 @@ def do_deck(user, args):
             num_cards = int(args[0])
             args = args[1:]
         card_name = ' '.join(args)
-        s_cards = db.models.Card.search(card_name)
-        if len(s_cards) is 0:
+        s_card = db.session.query(db.models.Card).filter(db.models.Card.name.like(card_name)).first()
+        if s_card is None:
             user.presenter.show_msg("Card '{}' not found.".format(card_name))
             return
-        if len(s_cards) > 1:
-            user.presenter.show_msg("Multiple cards called {}: {}Please be more specific.".format(card_name, ', '.join(card.name for card in s_cards)))
-            return
-        s_card = s_cards[0]
         total_cards = 0
         for card in user.deck.cards:
             total_cards += user.deck.cards[card]
@@ -484,7 +481,7 @@ def do_table(user, args):
         table_name = colour.strip_tokens(' '.join(args))
         table_ = objects.Table(user, table_name)
         table_.start_time = int(mud.tick_count)
-        mud.add_tick(table_.round_timer, table_.start_time+50*60, repeat=False)
+        #mud.add_tick(table_.round_timer, table_.start_time+50*60, repeat=False)
         mud.tables.append(table_)
         user.room.tables.append(table_)
         do_table(user, ['join', table_name])

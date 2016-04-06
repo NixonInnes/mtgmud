@@ -14,6 +14,9 @@ class TextPresenter(Presenter):
     def show_channel(self, channel, msg):
         self.present("&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, msg))
 
+    def show_help(self, help_file):
+        self.present(help_file.read())
+
     def show_room(self, room):
         buff = "&y.-~~~~~~~~~~~~~~~~~~~~~~~~~~&Y{{&W {:^20} &Y}}&x&y~~~~~~~~~~~~~~~~~~~~~~~~~~-.&x\r\n".format(
                 room.name)
@@ -76,6 +79,7 @@ class TextPresenter(Presenter):
             buff += draw_card(card)
         self.present(buff)
 
+
     def draw_prompt(self):
         buff = ""
         if self.user.name is not None:
@@ -83,9 +87,9 @@ class TextPresenter(Presenter):
             if self.user.deck is not None:
                 buff += "&B||&x &c{}&x &C(&x&c{}&x&C)&x ".format(self.user.deck.name, self.user.deck.no_cards)
             if self.user.table is not None:
-                buff += "&B||&x &GH&x:&G{}&x &YL&x:&Y{}&x &yG&x:&y{}&x ".format(len(self.user.table.hands[self]),
-                                                                                len(self.user.table.libraries[self]),
-                                                                                len(self.user.table.graveyards[self]))
+                buff += "&B||&x &GH&x:&G{}&x &YL&x:&Y{}&x &yG&x:&y{}&x ".format(len(self.user.table.hands[self.user]),
+                                                                                len(self.user.table.libraries[self.user]),
+                                                                                len(self.user.table.graveyards[self.user]))
         buff += "&B>&x&w>> &x"
         return buff
 
