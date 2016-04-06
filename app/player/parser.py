@@ -5,7 +5,7 @@ def parse(user, msg):
     args = msg.split()
 
     if user.authd is False:
-        player.actions['login'](user, args)
+        player.acts.do_login(user, args)
         return
 
     if args[0] in user.db.aliases:

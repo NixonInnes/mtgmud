@@ -1,1 +1,1 @@
-from . import objects
+from . import channels, objects
