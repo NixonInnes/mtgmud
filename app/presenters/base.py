@@ -9,6 +9,15 @@ class Presenter(object):
     def show_msg(self, msg):
         raise NotImplementedError
 
+    def show_info(self, title, header, info):
+        raise NotImplementedError
+
+    def show_info_2col(self, title, header, info):
+        raise NotImplementedError
+
+    def show_info_3col(self, title, header, info):
+        raise NotImplementedError
+
     def show_channel(self, channel, msg):
         raise NotImplementedError
 

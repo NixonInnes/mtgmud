@@ -102,19 +102,13 @@ def do_look(user, args):
     user.presenter.show_room(user.room)
 
 
-# TODO: Make some kind of table data presenter
-# def do_who(user, args):
-#     """
-#     Sends a list of connected users to the user.
-#     """
-#     buff = style.header_80("ONLINE USERS")
-#     buff += style.body_2cols_80('USERS', 'ROOM')
-#     buff += style.ROW_LINE_80
-#     for u in server.users:
-#         buff += style.body_2cols_80(u.name, u.room.name)
-#     buff += style.body_80("Online: {:^3}".format(len(mud.users)), align='left')
-#     buff += style.FOOTER_80
-#     user.presenter.show_msg(buff)
+def do_who(user, args):
+    """
+    Sends a list of connected users to the user.
+    """
+    headers = ('User', 'Room')
+    info = [(u.name, u.room.name) for u in mud.users]
+    user.presenter.show_info_2col('USERS', headers, info)
 
 
 def do_help(user, args):
@@ -138,13 +132,11 @@ def do_alias(user, args):
     Create or delete aliases for the user.
     """
     if args is None:
-        # TODO: presenter table data
-        # buff = style.header_40('Aliases')
-        # for alias in user.db.aliases:
-        #     buff += style.body_40("{}: {}".format(alias, user.db.aliases[alias]))
-        # buff += style.BLANK_40
-        # buff += style.FOOTER_40
-        # user.presenter.show_msg(buff)
+        header = 'My Aliases'
+        info = []
+        for alias in user.db.aliases:
+            info.append("{}: {}".format(alias, user.db.aliases[alias]))
+        user.presenter.show_info('ALIASES', header, info)
         return
     if args[0] == 'delete' and len(args) > 1:
         if args[1] in user.db.aliases:
@@ -262,16 +254,10 @@ def do_card(user, args):
     user.presenter.show_card(card)
 
 
-# TODO: presenter table data
-# def do_rooms(user, args):
-#     buff = style.header_80('ROOMS')
-#     buff += style.body_2cols_80('ROOM', 'USERS')
-#     buff += style.ROW_LINE_2COL_80
-#     for room in server.rooms:
-#         buff += style.body_2cols_80(room.name, ', '.join(user.name for user in room.occupants))
-#     buff += style.BLANK_80
-#     buff += style.FOOTER_80
-#     user.presenter.show_msg(buff)
+def do_rooms(user, args):
+    headers = ('Room', 'Users')
+    info = [(room.name, ', '.join(user.name for user in room.occupants)) for room in mud.rooms]
+    user.presenter.show_info_2col('ROOMS', headers, info)
 
 
 def do_room(user, args):
@@ -443,19 +429,17 @@ def do_deck(user, args):
     }
 
     if args is None:
-        # TODO: presenter table data
-        # if user.deck is None:
-        #     do_help(user, ['deck'])
-        #     return
-        # buff = style.header_40(user.deck.name)
-        # num_cards = 0
-        # for card in user.deck.cards:
-        #     num_cards += user.deck.cards[card]
-        #     s_card = db.session.query(db.models.Card).get(int(card))
-        #     buff += style.body_40("{:^3} x {:<25}".format(user.deck.cards[card], s_card.name))
-        # buff += style.body_40(" [{}]".format(num_cards, ''), align='left')
-        # buff += style.FOOTER_40
-        # user.presenter.show_msg(buff)
+        if user.deck is None:
+            do_help(user, ['deck'])
+            return
+        header = user.deck.name
+        info = []
+        num_cards = 0
+        for card in user.deck.cards:
+            num_cards += user.deck.cards[card]
+            s_card = db.session.query(db.models.Card).get(int(card))
+            info.append("{:^3} x {:<25}".format(user.deck.cards[card], s_card.name))
+        user.presenter.show_info('DECK', header, info)
         return
     if args[0] in verbs:
         verbs[args[0]](args[1:] if len(args) > 1 else None)
@@ -463,14 +447,9 @@ def do_deck(user, args):
     do_help(user, ['deck'])
 
 
-# TODO: presenter table data
-# def do_decks(user, args):
-#     buff = style.header_40('Decks')
-#     for deck in user.decks:
-#         buff += style.body_40("{:1}[{:^3}] {}".format('*' if deck == user.deck else '', deck.no_cards, deck.name), align='left')
-#     buff += style.BLANK_40
-#     buff += style.FOOTER_40
-#     user.presenter.show_msg(buff)
+def do_decks(user, args):
+    info = ["{:1}[{:^3}] {}".format('*' if deck == user.deck else '', deck.no_cards, deck.name) for deck in user.deck]
+    user.presenter.show_info('DECKS', 'decks', info)
 
 
 def do_table(user, args):
@@ -631,14 +610,14 @@ def do_table(user, args):
         elif args[0] == "all":
             for card in table.battlefields[user]:
                 card.untap()
-            channels.do_tinfo(user, "untap all your cards.", "untaps all their cards.")
+            channels.do_tinfo(user.table, "{} untaps all their cards.".format(user.name))
         else:
             do_help(user, ['table', 'tap'])
 
     @d_user_has(user, 'table')
     def shuffle(args):
         user.table.shuffle(user)
-        channels.do_tinfo(user, "shuffled your library.", "shuffled their library.")
+        channels.do_tinfo(user.table, "{} shuffled their library.".format(user.name))
 
     @d_user_has(user, 'table')
     def tutor(args):
@@ -663,7 +642,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.destroy(user, card)
-        channels.do_tinfo(user, "destroy your {}.".format(card.name), "destroys their {}.".format(card.name))
+        channels.do_tinfo(user.table, "{} destroys their {}.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def return_(args):
@@ -691,7 +670,7 @@ def do_table(user, args):
             return
         card = table.graveyards[user][int(args[0])]
         table.greturn(user, card)
-        channels.do_tinfo(user, "return {} from your graveyard to hand.".format(card.name), "returns {} from their graveyard to hand.".format(card.name))
+        channels.do_tinfo(user.table, "{} returns {} from their graveyard to hand.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def unearth(args):
@@ -719,7 +698,7 @@ def do_table(user, args):
             return
         card = table.battlefields[user][card_index]
         table.exile(user, card)
-        channels.do_tinfo(user, "exile your {}.".format(card.name), "exiles their {}.".format(card.name))
+        channels.do_tinfo(user.table, "{} exiles their {}.".format(user.name, card.name))
 
     @d_user_has(user, 'table')
     def grexile(args):

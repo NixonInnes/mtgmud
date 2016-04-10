@@ -11,6 +11,42 @@ class TextPresenter(Presenter):
     def show_msg(self, msg):
         self.present(msg)
 
+    def show_info(self, title, header, info):
+        buff = "&c||##########################&C[&x &W{:^20}&x &C]&x&c##########################||&x\r\n".format(title)
+        buff += BLANK_80
+        buff += "&c||&x {:^74} &c||&x\r\n".format(header)
+        buff += ROW_LINE_80
+        buff += BLANK_80
+        for row in info:
+            buff += "&c||&x {:^74} &c||&x\r\n".format(row)
+        buff += BLANK_80
+        buff += FOOTER_80
+        self.present(buff)
+
+    def show_info_2col(self, title, header, info):
+        buff = "&c||##########################&C[&x &W{:^20}&x &C]&x&c##########################||&x\r\n".format(title)
+        buff += BLANK_80
+        buff += "&c||&x {:^35} &c||&x {:^35} &c||&x\r\n".format(header[0], header[1])
+        buff += ROW_LINE_80
+        buff += BLANK_80
+        for row in info:
+            buff += "&c||&x {:^35} &c||&x {:^35} &c||&x\r\n".format(row[0], row[1])
+        buff += BLANK_80
+        buff += FOOTER_80
+        self.present(buff)
+
+    def show_info_3col(self, title, header, info):
+        buff = "&c||##########################&C[&x &W{:^20}&x &C]&x&c##########################||&x\r\n".format(title)
+        buff += BLANK_80
+        buff += "&c||&x {:^22} &c||&x {:^22} &c||&x {:^22} &c||&x\r\n".format(header[0], header[1], header[2])
+        buff += ROW_LINE_80
+        buff += BLANK_80
+        for row in info:
+            buff += "&c||&x {:^22} &c||&x {:^22} &c||&x {:^22} &c||&x\r\n".format(row[0], row[1], row[2])
+        buff += BLANK_80
+        buff += FOOTER_80
+        self.present(buff)
+
     def show_channel(self, channel, msg):
         self.present("&W[&x{}{}&x&W]&x {}{}&x".format(channel.colour_token, channel.name, channel.colour_token, msg))
 
@@ -152,32 +188,6 @@ BLANK_40 = "&c||                                    ||&x\r\n"
 ROW_LINE_40 = "&c||====================================||&x\r\n"
 BLANK_2COL_40 = "&c||                 ||                 ||&x\r\n"
 ROW_LINE_2COL_40 = "&c||=================||=================||&x\r\n"
-
-
-def header_80(title):
-    buff = "&c||##########################&C[&x &W{:^20}&x &C]&x&c##########################||&x\r\n".format(title)
-    buff += BLANK_80
-    return buff
-
-
-def body_80(string, align='center'):
-    if align == 'left':
-        buff = "&c||&x {:<74} &c||&x\r\n".format(string)
-    elif align == 'right':
-        buff = "&c||&x {:>74} &c||&x\r\n".format(string)
-    else:  # center
-        buff = "&c||&x {:^74} &c||&x\r\n".format(string)
-    return buff
-
-
-def body_2cols_80(stringA, stringB):
-    buff = "&c||&x {:^35} &c||&x {:^35} &c||&x\r\n".format(stringA, stringB)
-    return buff
-
-
-def body_3cols_80(stringA, stringB, stringC):
-    buff = "&c||&x {:^22} &c||&x {:^22} &c||&x {:^22} &c||&x\r\n".format(stringA, stringB, stringC)
-    return buff
 
 
 def header_40(title):
