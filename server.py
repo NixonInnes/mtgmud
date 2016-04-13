@@ -1,5 +1,6 @@
 import sys
 import socketserver
+import ssl
 
 from app import config, db, mud
 from app.player import parser
@@ -67,6 +68,10 @@ class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def __init__(self, server_address, handler):
         socketserver.TCPServer.__init__(self, server_address, handler)
+    
+    def get_request(self):
+        (sock, addr) = SocketServer.TCPServer.get_request(self)
+        return (ssl.wrap_socket(socket, server_side=True, certfile="cert.pem"), addr)
 
 
 def main():
