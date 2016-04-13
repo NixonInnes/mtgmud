@@ -22,8 +22,8 @@ class Ticker(threading.Thread):
 class Mud(object):
     def __init__(self):
         self.connected = []
-        self.users = []
-        self.rooms = []
+        self._users = {}
+        self._rooms = {}
         self.tables = []
         self.channels = {}
         # A tick is a list of (function, interval, repeat?)
@@ -74,17 +74,31 @@ class Mud(object):
                     self.ticks.remove(tick)
         self.tick_count += 1
 
+    @property
+    def rooms(self):
+        return self._rooms.values()
+
     def get_room(self, room_name):
-        for room in self.rooms:
-            if room.name == room_name:
-                return room
-        return None
+        return self._rooms.get(room_name, None)
+
+    def add_room(self, room):
+        self._rooms.update({room.name: room})
+
+    def rem_room(self, room):
+        self._rooms.pop(room.name)
+
+    @property
+    def users(self):
+        return self._users.values()
 
     def get_user(self, user_name):
-        for user in self.users:
-            if user.name == user_name:
-                return user
-        return None
+        return self._users.get(user_name, None)
+
+    def add_user(self, user):
+        self._users.update({user.name: user})
+
+    def rem_user(self, user):
+        self._users.pop(user.name)
 
     def load_rooms(self):
         print("Loading rooms...")
@@ -92,11 +106,11 @@ class Mud(object):
             print("Cleaning out existing rooms...")
             for user in self.users:
                 user.room = None
-            self.rooms.clear()
+            self._rooms = {}
         for i in db.session.query(db.models.Room).all():
             print("Loading room: {}".format(i.name))
             room = objects.Room.load(i)
-            self.rooms.append(room)
+            self.add_room(room)
         print("Rooms loaded.")
 
     def load_channels(self):
@@ -106,6 +120,6 @@ class Mud(object):
             self.channels.clear()
         for channel in db.session.query(db.models.Channel).all():
             print("Loading channel: {}".format(channel.name))
-            self.channels[channel.key] = channel
+            self.channels.update({channel.key: channel})
         print("Channels loaded.")
 

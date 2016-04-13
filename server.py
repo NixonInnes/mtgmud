@@ -10,7 +10,7 @@ class User(socketserver.BaseRequestHandler):
     """Client connection, an instance per connection."""
 
     def setup(self):
-        print("Connection received from: {}".format(self.client_address))
+        print("Connection received: {}".format(self.client_address))
         self.authd = False
         self.name = None
         self.room = None
@@ -27,9 +27,10 @@ class User(socketserver.BaseRequestHandler):
             parser.parse(self, msg)
 
     def load(self, dbUser):
-        for user in mud.users:
-            if user.db.id is dbUser.id:
-                user.presenter.send_msg("You have signed in from another location!")
+        other = mud.get_user(dbUser.name)
+        if other:
+            other.presenter.show_msg("You have signed in from another location!")
+            other.disconnect()
 
         self.authd = True
         self.name = str(dbUser.name)
@@ -37,10 +38,9 @@ class User(socketserver.BaseRequestHandler):
         self.deck = dbUser.deck
         self.decks = dbUser.decks
         self.db = dbUser
-        mud.users.append(self)
-        lobby = mud.get_room(config.LOBBY_ROOM_NAME)
-        self.room = lobby
-        lobby.occupants.append(self)
+        mud.add_user(self)
+        self.room = mud.get_room(config.LOBBY_ROOM_NAME)
+        self.room.occupants.append(self)
 
     def save(self):
         self.db.name = self.name
@@ -53,6 +53,11 @@ class User(socketserver.BaseRequestHandler):
     def disconnect(self):
         self.save()
         self.request.close()
+
+    def finish(self):
+        print("Connection closed: {}".format(self.client_address))
+        if self in mud.users:
+            mud.rem_user(self)
 
 
 class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):

@@ -109,12 +109,12 @@ class TextPresenter(Presenter):
     def show_card(self, card):
         self.present(draw_card(card))
 
+    # TODO: This sucks
     def show_cards(self, cards):
         buff = ""
         for card in cards:
             buff += draw_card(card)
         self.present(buff)
-
 
     def draw_prompt(self):
         buff = ""

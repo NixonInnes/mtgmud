@@ -75,10 +75,10 @@ def do_login(user, args):
             if dbUser.verify_password(args[1]):
                 user.load(dbUser)
                 # TODO: Move this to user.flags
-                # if user.is_banned():
-                #     user.presenter.show_msg("Eeek! It looks like you're banned, buddy! Bye!")
-                #     actions['quit'](user, None)
-                #     return
+                if user.flags['banned']:
+                    user.presenter.show_msg("Eeek! It looks like you're banned, buddy! Bye!")
+                    do_quit(user, None)
+                    return
                 channels.do_info("{} has entered the realm.".format(user.name))
                 do_look(user, None)
                 return
@@ -92,7 +92,7 @@ def do_quit(user, args):
     """
     user.presenter.show_msg("&gYou are wracked with uncontrollable pain as you are extracted from the Matrix.&x")
     channels.do_info("{} has left the realm.".format(user.name))
-    user.transport.close()
+    user.disconnect()
 
 
 def do_look(user, args):
@@ -176,6 +176,7 @@ def do_make_admin(user, args):
     u.presenter.show_msg("&RYou have been made an Admin!&x")
     user.presenter.show_msg("&CYou have admin'd {}.&x")
 
+
 def do_mute(user, args):
     """
     Set mute flag for a user.
@@ -187,14 +188,14 @@ def do_mute(user, args):
         user.presenter.show_msg("Mute who?")
         return
     user_name = args[0]
-    u = mud.get_user(user_name)
+    victim = mud.get_user(user_name)
     if user is None:
         user.presenter.show_msg("Could not find user '{}'.".format(user_name))
         return
-    u.flags['muted'] = True
-    u.save()
-    user.msg_client(u, "&RYou have been muted!&x")
-    user.presenter.show_msg("&CYou have muted {}.&x".format(u.name))
+    victim.flags['muted'] = True
+    victim.save()
+    victim.presenter.show_msg("&RYou have been muted!&x")
+    user.presenter.show_msg("&CYou have muted {}.&x".format(victim.name))
     return
 
 
@@ -209,15 +210,14 @@ def do_freeze(user, args):
         user.presenter.show_msg("Freeze who?")
         return
     username = args[0]
-    for u in mud.users:
-        if u.name == username:
-            u.flags['frozen'] = True
-            u.save()
-            user.msg_client(u, "&RYou have been frozen solid!&x")
-            user.presenter.show_msg("&CYou have frozen {}.&x".format(u.name))
-
-            return
-    user.presenter.show_msg("Could not find user '{}'.".format(username))
+    victim = mud.get_user(username)
+    if victim is None:
+        user.presenter.show_msg("Could not find user '{}'.".format(username))
+        return
+    victim.flags['frozen'] = True
+    victim.save()
+    victim.presenter.show_msg("&RYou have been frozen solid!&x")
+    user.presenter.show_msg("&CYou have frozen {}.&x".format(victim.name))
 
 
 def do_ban(user, args):
@@ -231,15 +231,15 @@ def do_ban(user, args):
         user.presenter.show_msg("Ban who?")
         return
     username = args[0]
-    for u in mud.users:
-        if u.name == username:
-            u.flags['banned'] = True
-            u.save()
-            user.msg_client(u, "&RYou have been banned!&x")
-            user.presenter.show_msg("&CYou have banned {}.&x".format(u.name))
-            do_quit(u, None)
-            return
-    user.presenter.show_msg("Could not find user '{}'.".format(username))
+    victim = mud.get_user(username)
+    if victim is None:
+        user.presenter.show_msg("Could not find user '{}'.".format(username))
+        return
+    victim.flags['banned'] = True
+    victim.save()
+    victim.presenter.show_msg("&RYou have been banned!&x")
+    user.presenter.show_msg("&CYou have banned {}.&x".format(victim.name))
+    do_quit(victim, None)
 
 
 def do_card(user, args):
@@ -283,19 +283,18 @@ def do_room(user, args):
             do_help(user, ['room'])
             return
         room_name = ' '.join(args)
-        for r in mud.rooms:
-            if r.name == room_name:
-                room = r
-        if room is not None:
-            for occupant in room.occupants:
-                do_goto(occupant, config.LOBBY_ROOM_NAME)
-                user.send_to_user(occupant, "The lights flicker and you are suddenly in {}. Weird...".format(config.LOBBY_ROOM_NAME))
-            mud.rooms.remove(room)
-            db.session.delete(room.db)
-            db.session.commit()
-            user.presenter.show_msg("Room '{}' has been deleted.".format(room.name))
+        room = mud.get_room(room_name)
+        if room is None:
+            user.presenter.show_msg("Room '{}' was not found.".format(room_name))
             return
-        user.presenter.show_msg("Room '{}' was not found.".format(room_name))
+        for occupant in room.occupants:
+            do_goto(occupant, config.LOBBY_ROOM_NAME)
+            occupant.presenter.show_msg(
+                "The lights flicker and you are suddenly in {}. Weird...".format(config.LOBBY_ROOM_NAME))
+        mud.rooms.remove(room)
+        db.session.delete(room.db)
+        db.session.commit()
+        user.presenter.show_msg("Room '{}' has been deleted.".format(room.name))
 
     verbs = {
         'create': create,
@@ -486,6 +485,7 @@ def do_table(user, args):
                 die_size = int(args[0])
             else:
                 do_help(user, ['table', 'dice'])
+                return
         else:
             die_size = 6 # Default dice size
         roll = randint(1, die_size)
@@ -538,7 +538,7 @@ def do_table(user, args):
 
     @d_user_has(user, 'table')
     def hand(args):
-        user.presenter.show_cards(user.table.hand(user))
+        user.presenter.show_cards(user.table.hands[user])
 
     @d_user_has(user, 'table')
     def play(args):
@@ -763,6 +763,3 @@ def do_table(user, args):
         verbs[args[0]](args[1:] if len(args) > 1 else None)
     else:
         do_help(user, ['table'])
-
-
-
