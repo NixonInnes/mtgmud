@@ -3,7 +3,7 @@ import socketserver
 import ssl
 
 from app import config, db, mud
-from app.player import parser
+from app.player import parser, acts
 from app.presenters import presenters
 
 
@@ -22,6 +22,7 @@ class User(socketserver.BaseRequestHandler):
         mud.connected.append(self)
 
     def handle(self):
+        acts.do_help(self, ['welcome'])
         while True:
             data = self.request.recv(1024)
             msg = data.decode('utf-8')
@@ -70,8 +71,8 @@ class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
         socketserver.TCPServer.__init__(self, server_address, handler)
     
     def get_request(self):
-        (sock, addr) = SocketServer.TCPServer.get_request(self)
-        return (ssl.wrap_socket(socket, server_side=True, certfile="cert.pem"), addr)
+        (sock, addr) = socketserver.TCPServer.get_request(self)
+        return ssl.wrap_socket(sock, server_side=True, certfile="app/certs/cert.pem"), addr
 
 
 def main():
