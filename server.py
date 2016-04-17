@@ -69,10 +69,11 @@ class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def __init__(self, server_address, handler):
         socketserver.TCPServer.__init__(self, server_address, handler)
-    
-    def get_request(self):
-        (sock, addr) = socketserver.TCPServer.get_request(self)
-        return ssl.wrap_socket(sock, server_side=True, certfile="app/certs/cert.pem"), addr
+
+    # There's no way to support SSL without a client... that I know of :(
+    # def get_request(self):
+    #     (sock, addr) = socketserver.TCPServer.get_request(self)
+    #     return ssl.wrap_socket(sock, server_side=True, certfile="certs/cert.pem"), addr
 
 
 def main():
