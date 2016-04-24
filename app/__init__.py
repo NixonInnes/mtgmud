@@ -1,3 +1,4 @@
-from app.mud.server import Mud
+from app.mud import Mud
 
-server = Mud()
+
+mud = Mud()

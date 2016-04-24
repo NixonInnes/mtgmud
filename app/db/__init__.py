@@ -1,3 +1,5 @@
-from .models import Session
+from sqlalchemy.orm import sessionmaker, scoped_session
+from . import models
 
-session = Session()
+Session = sessionmaker(bind=models.engine)
+session = scoped_session(Session)

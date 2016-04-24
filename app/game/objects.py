@@ -1,7 +1,5 @@
-from itertools import zip_longest
 from random import shuffle
-
-from app import db, style
+from app import db
 
 
 class Room(object):
@@ -41,9 +39,9 @@ class Table(object):
         self.poison_counters = {}
         self.users = []
 
-    def round_timer(self):
-        for user in self.users:
-            user.send_to_self("&W[&x&gtable&x&W]&x &g50 minutes has elapsed.&w\r\n")
+    # def round_timer(self):
+    #     for user in self.users:
+    #         user.presenter.send_msg("&W[&x&gtable&x&W]&x &g50 minutes has elapsed.&w\r\n")
 
     def join(self, user):
         self.users.append(user)
@@ -81,45 +79,6 @@ class Table(object):
         for i in range(int(num)):
             self.hands[user].append(self.libraries[user][0])
             self.libraries[user].pop(0)
-
-    def show(self):
-        buff = style.table_header(self.name)
-        user_list = []
-        for user in self.battlefields:
-            card_list = [style.table_user(user.name),
-                         style.table_user_stats(self.life_totals[user], len(self.hands[user]),
-                                                len(self.libraries[user]), len(self.graveyards[user]),
-                                                self.poison_counters[user] if self.poison_counters[user] > 0 else None)]
-            lands_list = []
-            artifacts_list = []
-            enchantments_list = []
-            creatures_list = []
-            others_list = []
-            for card in self.battlefields[user]:
-                if 'Land' in card.types:
-                    lands_list.append(style.table_card(self.battlefields[user].index(card), card))
-                elif 'Artifact' in card.types:
-                    artifacts_list.append(style.table_card(self.battlefields[user].index(card), card))
-                elif 'Enchantment' in card.types:
-                    enchantments_list.append(style.table_card(self.battlefields[user].index(card), card))
-                elif 'Creature' in card.types:
-                    creatures_list.append(style.table_card(self.battlefields[user].index(card), card))
-                else:
-                    others_list.append(style.table_card(self.battlefields[user].index(card), card))
-            card_list += lands_list+artifacts_list+enchantments_list+creatures_list+others_list
-            user_list.append(card_list[:])
-        battlefield_list = list(zip_longest(*user_list))
-        for lines in battlefield_list:
-            for card in lines:
-                buff += "{}{}".format("\r\n" if card is lines[0] else "", style.table_card_blank() if card is None else card)
-        return buff
-
-    def hand(self, user):
-        buff = style.header_40("Hand")
-        for card in self.hands[user]:
-            buff += style.body_40("({:2}) {:<25}".format(self.hands[user].index(card), card.name))
-        buff += style.FOOTER_40
-        return buff
 
     def play(self, user, card):
         self.battlefields[user].append(card)

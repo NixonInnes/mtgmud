@@ -4,13 +4,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from app import config
 
 engine = create_engine(config.DATABASE)
-Session = sessionmaker(bind=engine)
-session = Session()
+
 Base = declarative_base()
 
 USER_FLAGS = {
@@ -21,11 +18,14 @@ USER_FLAGS = {
     'frozen': False
 }
 
+
 def generate_password_hash(password):
     return pbkdf2_sha256.encrypt(password, rounds=150000, salt_size=15)
 
+
 def check_password_hash(password, password_hash):
     return pbkdf2_sha256.verify(password, password_hash)
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -85,9 +85,12 @@ class Card(Base):
     toughness = Column(String)
     loyalty = Column(String)
 
+
+    # TODO: remove this
     @staticmethod
     def search(card_name):
-        return session.query(Card).filter(Card.name.like(card_name)).all()
+        return None
+        #return session.query(Card).filter(Card.name.like(card_name)).all()
 
     def __repr__(self):
         return "<Card(name='{}')>".format(self.name)
@@ -110,11 +113,12 @@ class Deck(Base):
             num += self.cards[card]
         return num
 
-    def show(self):
-        buff = "\nDeck: {}".format(self.name)
-        for card in self.cards:
-            buff += "\n{} x {}".format(self.cards[card], session.query(Card).get(card).name)
-        return buff
+    # This is bad
+    # def show(self):
+    #     buff = "\nDeck: {}".format(self.name)
+    #     for card in self.cards:
+    #         buff += "\n{} x {}".format(self.cards[card], session.query(Card).get(card).name)
+    #     return buff
 
     def __repr__(self):
         return "<Deck(name='{}')>".format(self.name)
